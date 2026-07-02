@@ -1,0 +1,84 @@
+import { useMemo, useState } from "react";
+import Badge from "../components/Badge.jsx";
+import Button from "../components/Button.jsx";
+import DataTable from "../components/DataTable.jsx";
+import FilterTabs from "../components/FilterTabs.jsx";
+import SectionHeader from "../components/SectionHeader.jsx";
+import { formatCurrency } from "../utils/format.js";
+
+const statusOptions = [
+  { value: "all", label: "전체" },
+  { value: "pending", label: "대기" },
+  { value: "approved", label: "승인" },
+  { value: "rejected", label: "반려" },
+  { value: "purchased", label: "구매 완료" },
+  { value: "delivered", label: "입고 완료" },
+];
+
+export default function PurchasesPage({ data, actions }) {
+  const [status, setStatus] = useState("all");
+
+  const rows = useMemo(() => {
+    return data.purchaseRequests.filter((item) => status === "all" || item.status === status);
+  }, [data.purchaseRequests, status]);
+
+  const columns = [
+    {
+      key: "item_name",
+      header: "물품",
+      render: (item) => (
+        <div className="cell-main">
+          <strong>{item.item_name}</strong>
+          <span>{item.reason}</span>
+        </div>
+      ),
+    },
+    { key: "quantity", header: "수량" },
+    { key: "estimated_price", header: "예상 금액", render: (item) => formatCurrency(item.estimated_price) },
+    { key: "requester", header: "신청자" },
+    { key: "status", header: "상태", render: (item) => <Badge value={item.status} /> },
+    {
+      key: "actions",
+      header: "작업",
+      render: (item) => (
+        <div className="table-actions">
+          <Button size="sm" variant="secondary" onClick={() => actions.openEdit("purchaseRequests", item)}>
+            수정
+          </Button>
+          <Button size="sm" variant="secondary" onClick={() => actions.updateItem("purchaseRequests", item.id, { status: "approved" })}>
+            승인
+          </Button>
+          <Button size="sm" variant="secondary" onClick={() => actions.updateItem("purchaseRequests", item.id, { status: "rejected" })}>
+            반려
+          </Button>
+          <Button size="sm" variant="secondary" onClick={() => actions.updateItem("purchaseRequests", item.id, { status: "purchased" })}>
+            구매 완료 처리
+          </Button>
+          <Button size="sm" variant="secondary" onClick={() => actions.updateItem("purchaseRequests", item.id, { status: "delivered" })}>
+            입고 완료 처리
+          </Button>
+        </div>
+      ),
+    },
+  ];
+
+  return (
+    <div className="page-stack">
+      <SectionHeader
+        title="Purchases"
+        description="물품 구매 요청의 승인, 구매, 입고 상태를 관리합니다."
+        actions={
+          <Button variant="primary" onClick={() => actions.openCreate("purchaseRequests")}>
+            구매 신청
+          </Button>
+        }
+      />
+
+      <section className="toolbar-panel">
+        <FilterTabs options={statusOptions} value={status} onChange={setStatus} />
+      </section>
+
+      <DataTable columns={columns} rows={rows} />
+    </div>
+  );
+}

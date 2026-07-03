@@ -538,11 +538,13 @@ export default function App() {
       <main className="main-shell">
         <Header
           title={activeMeta.title}
+          activePage={activePage}
           searchValue={globalSearch}
           onSearchChange={setGlobalSearch}
           currentUser={currentUser}
           notifications={data.notifications}
           onMenuClick={() => setSidebarOpen(true)}
+          onNavigate={setActivePage}
           onQuickCreate={openCreate}
           onShowNotifications={showNotifications}
           onProfileClick={() => setActivePage("mypage")}

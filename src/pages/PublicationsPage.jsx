@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import Badge from "../components/Badge.jsx";
 import Button from "../components/Button.jsx";
-import DataTable from "../components/DataTable.jsx";
 import FilterTabs from "../components/FilterTabs.jsx";
 import SectionHeader from "../components/SectionHeader.jsx";
 
@@ -27,49 +26,11 @@ export default function PublicationsPage({ data, actions }) {
     });
   }, [data.publications, status, year]);
 
-  const columns = [
-    {
-      key: "title",
-      header: "논문",
-      render: (item) => (
-        <div className="cell-main">
-          <strong>{item.title}</strong>
-          <span>{item.authors_text}</span>
-        </div>
-      ),
-    },
-    { key: "year", header: "연도" },
-    { key: "venue", header: "게재지" },
-    { key: "pub_type", header: "유형" },
-    { key: "status", header: "상태", render: (item) => <Badge value={item.status} /> },
-    { key: "is_public", header: "공개", render: (item) => <Badge value={item.is_public ? "public" : "private"} /> },
-    {
-      key: "actions",
-      header: "작업",
-      render: (item) => (
-        <div className="table-actions">
-          <Button size="sm" variant="secondary" onClick={() => actions.openEdit("publications", item)}>
-            논문 수정
-          </Button>
-          <Button size="sm" variant="secondary" onClick={() => actions.updateItem("publications", item.id, { is_public: !item.is_public })}>
-            공개 토글
-          </Button>
-          <Button size="sm" variant="secondary" onClick={() => actions.showToast("첨부파일 목록을 확인했습니다.")}>
-            첨부파일 보기
-          </Button>
-          <Button size="sm" variant="danger" onClick={() => actions.deleteItem("publications", item.id, "논문")}>
-            논문 삭제
-          </Button>
-        </div>
-      ),
-    },
-  ];
-
   return (
     <div className="page-stack">
       <SectionHeader
         title="Publications"
-        description="논문과 연구 성과의 상태, 공개 여부를 관리합니다."
+        description="Publications 리스트처럼 성과를 citation 중심으로 정리합니다."
         actions={
           <Button variant="primary" onClick={() => actions.openCreate("publications")}>
             논문 등록
@@ -88,7 +49,44 @@ export default function PublicationsPage({ data, actions }) {
         <FilterTabs options={statusOptions} value={status} onChange={setStatus} />
       </section>
 
-      <DataTable columns={columns} rows={rows} />
+      <section className="citation-list">
+        {rows.map((item) => (
+          <article key={item.id} className="citation-item">
+            <div className="citation-main">
+              <h2>{item.title}</h2>
+              <p className="authors">{item.authors_text}</p>
+              <p>
+                <strong>{item.venue}</strong>, {item.year}
+                {item.published_date ? ` · ${item.published_date}` : ""}
+              </p>
+              <div className="notice-meta">
+                <Badge value={item.pub_type} />
+                <Badge value={item.status} />
+                <Badge value={item.is_public ? "public" : "private"} />
+              </div>
+            </div>
+            <div className="item-actions quiet-actions">
+              {item.doi ? (
+                <Button size="sm" variant="secondary" onClick={() => actions.copyText(item.doi, "DOI가 복사되었습니다.")}>
+                  DOI
+                </Button>
+              ) : null}
+              <Button size="sm" variant="secondary" onClick={() => actions.openEdit("publications", item)}>
+                논문 수정
+              </Button>
+              <Button size="sm" variant="secondary" onClick={() => actions.updateItem("publications", item.id, { is_public: !item.is_public })}>
+                공개 토글
+              </Button>
+              <Button size="sm" variant="secondary" onClick={() => actions.showToast("첨부파일 목록을 확인했습니다.")}>
+                첨부파일 보기
+              </Button>
+              <Button size="sm" variant="danger" onClick={() => actions.deleteItem("publications", item.id, "논문")}>
+                삭제
+              </Button>
+            </div>
+          </article>
+        ))}
+      </section>
     </div>
   );
 }

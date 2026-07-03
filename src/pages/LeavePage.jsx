@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import Badge from "../components/Badge.jsx";
 import Button from "../components/Button.jsx";
-import DataTable from "../components/DataTable.jsx";
 import FilterTabs from "../components/FilterTabs.jsx";
 import SectionHeader from "../components/SectionHeader.jsx";
 import StatCard from "../components/StatCard.jsx";
@@ -20,35 +19,6 @@ export default function LeavePage({ data, currentUser, actions }) {
   const rows = useMemo(() => {
     return data.leaveRequests.filter((request) => status === "all" || request.status === status);
   }, [data.leaveRequests, status]);
-
-  const columns = [
-    { key: "user_name", header: "신청자" },
-    { key: "leave_type", header: "유형", render: (request) => <Badge value={request.leave_type} /> },
-    { key: "period", header: "기간", render: (request) => `${request.start_date} - ${request.end_date}` },
-    { key: "half_period", header: "반차" },
-    { key: "reason", header: "사유" },
-    { key: "status", header: "상태", render: (request) => <Badge value={request.status} /> },
-    {
-      key: "actions",
-      header: "작업",
-      render: (request) => (
-        <div className="table-actions">
-          <Button size="sm" variant="secondary" onClick={() => actions.openEdit("leaveRequests", request)}>
-            신청 수정
-          </Button>
-          <Button size="sm" variant="secondary" onClick={() => actions.updateItem("leaveRequests", request.id, { status: "approved" })}>
-            승인
-          </Button>
-          <Button size="sm" variant="secondary" onClick={() => actions.updateItem("leaveRequests", request.id, { status: "rejected" })}>
-            반려
-          </Button>
-          <Button size="sm" variant="danger" onClick={() => actions.deleteItem("leaveRequests", request.id, "휴가 신청")}>
-            신청 취소
-          </Button>
-        </div>
-      ),
-    },
-  ];
 
   return (
     <div className="page-stack">
@@ -72,7 +42,39 @@ export default function LeavePage({ data, currentUser, actions }) {
         <FilterTabs options={statusOptions} value={status} onChange={setStatus} />
       </section>
 
-      <DataTable columns={columns} rows={rows} />
+      <section className="approval-list">
+        {rows.map((request) => (
+          <article key={request.id} className="approval-item">
+            <div className="approval-main">
+              <div className="notice-meta">
+                <Badge value={request.leave_type} />
+                <Badge value={request.status} />
+                <span>{request.requested_at}</span>
+              </div>
+              <h2>{request.user_name}</h2>
+              <p>
+                {request.start_date} - {request.end_date}
+                {request.half_period ? ` · ${request.half_period}` : ""}
+              </p>
+              <p>{request.reason}</p>
+            </div>
+            <div className="item-actions quiet-actions">
+              <Button size="sm" variant="secondary" onClick={() => actions.openEdit("leaveRequests", request)}>
+                신청 수정
+              </Button>
+              <Button size="sm" variant="secondary" onClick={() => actions.updateItem("leaveRequests", request.id, { status: "approved" })}>
+                승인
+              </Button>
+              <Button size="sm" variant="secondary" onClick={() => actions.updateItem("leaveRequests", request.id, { status: "rejected" })}>
+                반려
+              </Button>
+              <Button size="sm" variant="danger" onClick={() => actions.deleteItem("leaveRequests", request.id, "휴가 신청")}>
+                신청 취소
+              </Button>
+            </div>
+          </article>
+        ))}
+      </section>
     </div>
   );
 }

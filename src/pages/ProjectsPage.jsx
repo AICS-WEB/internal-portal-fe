@@ -44,7 +44,7 @@ export default function ProjectsPage({ data, actions, globalSearch }) {
     <div className="page-stack">
       <SectionHeader
         title="Projects"
-        description="연구과제 상태와 주요 기간을 카드로 관리합니다."
+        description="Research Projects 섹션처럼 과제의 주제, 지원기관, 기간을 중심으로 정리합니다."
         actions={
           <Button variant="primary" onClick={() => actions.openCreate("researchProjects")}>
             과제 등록
@@ -57,28 +57,30 @@ export default function ProjectsPage({ data, actions, globalSearch }) {
         <FilterTabs options={statusOptions} value={status} onChange={setStatus} />
       </section>
 
-      <section className="card-grid">
+      <section className="research-list">
         {projects.map((project) => (
-          <article key={project.id} className="project-card">
-            <div className="card-topline">
-              <Badge value={project.status} />
-              <span>{project.role}</span>
+          <article key={project.id} className="research-item">
+            <div className="research-content">
+              <div className="notice-meta">
+                <Badge value={project.status} />
+                <span>{project.funding_agency}</span>
+                <span>{project.role}</span>
+              </div>
+              <h2>{project.title}</h2>
+              <dl className="meta-grid">
+                <div>
+                  <dt>Period</dt>
+                  <dd>
+                    {project.start_date} - {project.end_date}
+                  </dd>
+                </div>
+                <div>
+                  <dt>Lead</dt>
+                  <dd>{project.owner}</dd>
+                </div>
+              </dl>
             </div>
-            <h2>{project.title}</h2>
-            <p>{project.funding_agency}</p>
-            <dl className="meta-grid">
-              <div>
-                <dt>기간</dt>
-                <dd>
-                  {project.start_date} - {project.end_date}
-                </dd>
-              </div>
-              <div>
-                <dt>담당</dt>
-                <dd>{project.owner}</dd>
-              </div>
-            </dl>
-            <div className="button-row">
+            <div className="item-actions quiet-actions">
               <Button size="sm" variant="secondary" onClick={() => actions.openEdit("researchProjects", project)}>
                 과제 수정
               </Button>

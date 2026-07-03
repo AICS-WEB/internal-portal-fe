@@ -10,13 +10,23 @@ const quickItems = [
   { label: "구매 신청", resource: "purchaseRequests" },
 ];
 
+const navItems = [
+  { id: "dashboard", label: "Dashboard" },
+  { id: "notices", label: "Notices" },
+  { id: "calendar", label: "Calendar" },
+  { id: "projects", label: "Research" },
+  { id: "files", label: "Resources" },
+  { id: "admin", label: "Admin" },
+];
+
 export default function Header({
-  title,
+  activePage,
   searchValue,
   onSearchChange,
   currentUser,
   notifications,
   onMenuClick,
+  onNavigate,
   onQuickCreate,
   onShowNotifications,
   onProfileClick,
@@ -26,18 +36,31 @@ export default function Header({
 
   return (
     <header className="top-header">
-      <div className="header-title-row">
+      <div className="lab-header-brand">
         <Button className="mobile-menu-button" variant="ghost" size="sm" onClick={onMenuClick}>
           메뉴
         </Button>
-        <div>
-          <h1>{title}</h1>
-          <p>AICS Lab 내부 운영 포털</p>
-        </div>
+        <button type="button" className="header-wordmark" onClick={() => onNavigate("dashboard")}>
+          <span>AICS Lab Hub</span>
+          <small>AI Convergence Software Lab Internal Portal</small>
+        </button>
       </div>
 
+      <nav className="lab-header-nav" aria-label="주요 섹션">
+        {navItems.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            className={activePage === item.id ? "active" : ""}
+            onClick={() => onNavigate(item.id)}
+          >
+            {item.label}
+          </button>
+        ))}
+      </nav>
+
       <div className="header-tools">
-        <SearchInput value={searchValue} onChange={onSearchChange} placeholder="전체 데이터 검색" />
+        <SearchInput value={searchValue} onChange={onSearchChange} placeholder="Search portal" />
         <Button variant="ghost" onClick={onShowNotifications}>
           알림 {unreadCount ? <span className="button-count">{unreadCount}</span> : null}
         </Button>

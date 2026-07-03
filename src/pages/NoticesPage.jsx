@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import Badge from "../components/Badge.jsx";
 import Button from "../components/Button.jsx";
-import DataTable from "../components/DataTable.jsx";
 import FilterTabs from "../components/FilterTabs.jsx";
 import Pagination from "../components/Pagination.jsx";
 import SearchInput from "../components/SearchInput.jsx";
@@ -40,49 +39,11 @@ export default function NoticesPage({ data, actions, globalSearch }) {
   const totalPages = Math.max(1, Math.ceil(filteredNotices.length / pageSize));
   const currentRows = filteredNotices.slice((page - 1) * pageSize, page * pageSize);
 
-  const columns = [
-    {
-      key: "title",
-      header: "제목",
-      render: (notice) => (
-        <div className="cell-main">
-          <strong>{notice.title}</strong>
-          <span>{notice.content}</span>
-        </div>
-      ),
-    },
-    { key: "author", header: "작성자" },
-    { key: "category", header: "카테고리", render: (notice) => <Badge value={notice.category} /> },
-    { key: "is_pinned", header: "고정", render: (notice) => (notice.is_pinned ? "고정" : "-") },
-    { key: "views", header: "조회수" },
-    { key: "created_at", header: "작성일" },
-    {
-      key: "actions",
-      header: "작업",
-      render: (notice) => (
-        <div className="table-actions">
-          <Button size="sm" variant="secondary" onClick={() => actions.openDetail("공지 상세", notice)}>
-            상세 보기
-          </Button>
-          <Button size="sm" variant="secondary" onClick={() => actions.openEdit("notices", notice)}>
-            수정
-          </Button>
-          <Button size="sm" variant="secondary" onClick={() => actions.updateItem("notices", notice.id, { is_pinned: !notice.is_pinned })}>
-            고정 토글
-          </Button>
-          <Button size="sm" variant="danger" onClick={() => actions.deleteItem("notices", notice.id, "공지사항")}>
-            삭제
-          </Button>
-        </div>
-      ),
-    },
-  ];
-
   return (
     <div className="page-stack">
       <SectionHeader
-        title="공지사항"
-        description="연구실 공지, 계정 안내, 일정 안내를 한 곳에서 관리합니다."
+        title="Notices"
+        description="AICS Lab 구성원을 위한 주요 공지와 운영 안내입니다."
         actions={
           <Button variant="primary" onClick={() => actions.openCreate("notices")}>
             공지 등록
@@ -100,7 +61,37 @@ export default function NoticesPage({ data, actions, globalSearch }) {
         </select>
       </section>
 
-      <DataTable columns={columns} rows={currentRows} />
+      <section className="notice-list" aria-label="공지사항 목록">
+        {currentRows.map((notice) => (
+          <article key={notice.id} className="notice-item">
+            <div className="notice-main">
+              <div className="notice-meta">
+                <Badge value={notice.category} />
+                {notice.is_pinned ? <Badge value="important">Pinned</Badge> : null}
+                <span>{notice.created_at}</span>
+                <span>{notice.author}</span>
+                <span>조회 {notice.views}</span>
+              </div>
+              <h2>{notice.title}</h2>
+              <p>{notice.content}</p>
+            </div>
+            <div className="item-actions quiet-actions">
+              <Button size="sm" variant="secondary" onClick={() => actions.openDetail("공지 상세", notice)}>
+                상세 보기
+              </Button>
+              <Button size="sm" variant="secondary" onClick={() => actions.openEdit("notices", notice)}>
+                수정
+              </Button>
+              <Button size="sm" variant="secondary" onClick={() => actions.updateItem("notices", notice.id, { is_pinned: !notice.is_pinned })}>
+                고정 토글
+              </Button>
+              <Button size="sm" variant="danger" onClick={() => actions.deleteItem("notices", notice.id, "공지사항")}>
+                삭제
+              </Button>
+            </div>
+          </article>
+        ))}
+      </section>
       <Pagination
         page={Math.min(page, totalPages)}
         totalPages={totalPages}

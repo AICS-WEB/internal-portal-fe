@@ -1,6 +1,5 @@
 import Badge from "../components/Badge.jsx";
 import Button from "../components/Button.jsx";
-import DataTable from "../components/DataTable.jsx";
 import SectionHeader from "../components/SectionHeader.jsx";
 import StatCard from "../components/StatCard.jsx";
 import { currentTime, todayISO } from "../utils/format.js";
@@ -55,32 +54,6 @@ export default function AttendancePage({ data, currentUser, actions }) {
     });
   };
 
-  const columns = [
-    { key: "user_name", header: "이름" },
-    { key: "date", header: "날짜" },
-    { key: "status", header: "상태", render: (record) => <Badge value={record.status} /> },
-    { key: "check_in", header: "출근" },
-    { key: "check_out", header: "퇴근" },
-    { key: "memo", header: "메모" },
-    {
-      key: "actions",
-      header: "관리",
-      render: (record) =>
-        canManage ? (
-          <div className="table-actions">
-            <Button size="sm" variant="secondary" onClick={() => openAttendanceEdit(record)}>
-              출결 수정
-            </Button>
-            <Button size="sm" variant="danger" onClick={() => actions.updateItem("attendanceRecords", record.id, { status: "absent", check_in: "", check_out: "" })}>
-              결석 처리
-            </Button>
-          </div>
-        ) : (
-          "-"
-        ),
-    },
-  ];
-
   return (
     <div className="page-stack">
       <SectionHeader title="Attendance" description="오늘 출결 상태와 최근 출결 기록을 관리합니다." />
@@ -119,7 +92,33 @@ export default function AttendancePage({ data, currentUser, actions }) {
         </div>
       </section>
 
-      <DataTable columns={columns} rows={data.attendanceRecords} />
+      <section className="record-list">
+        {data.attendanceRecords.map((record) => (
+          <article key={record.id} className="record-item">
+            <div className="record-main">
+              <div className="notice-meta">
+                <Badge value={record.status} />
+                <span>{record.date}</span>
+              </div>
+              <strong>{record.user_name}</strong>
+              <p>
+                출근 {record.check_in || "-"} · 퇴근 {record.check_out || "-"}
+                {record.memo ? ` · ${record.memo}` : ""}
+              </p>
+            </div>
+            {canManage ? (
+              <div className="item-actions quiet-actions">
+                <Button size="sm" variant="secondary" onClick={() => openAttendanceEdit(record)}>
+                  출결 수정
+                </Button>
+                <Button size="sm" variant="danger" onClick={() => actions.updateItem("attendanceRecords", record.id, { status: "absent", check_in: "", check_out: "" })}>
+                  결석 처리
+                </Button>
+              </div>
+            ) : null}
+          </article>
+        ))}
+      </section>
     </div>
   );
 }

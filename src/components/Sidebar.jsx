@@ -1,44 +1,54 @@
 const menuItems = [
-  { id: "dashboard", label: "Dashboard" },
-  { id: "notices", label: "Notices" },
-  { id: "calendar", label: "Calendar" },
-  { id: "attendance", label: "Attendance" },
-  { id: "leave", label: "Leave" },
-  { id: "projects", label: "Projects" },
-  { id: "publications", label: "Publications" },
-  { id: "files", label: "Files" },
-  { id: "purchases", label: "Purchases" },
-  { id: "budget", label: "Budget" },
-  { id: "credentials", label: "Credentials" },
-  { id: "admin", label: "Admin" },
-  { id: "mypage", label: "My Page" },
+  { id: "dashboard", label: "Dashboard", group: "Portal" },
+  { id: "notices", label: "Notices", group: "Portal" },
+  { id: "calendar", label: "Calendar", group: "Portal" },
+  { id: "attendance", label: "Attendance", group: "Operations" },
+  { id: "leave", label: "Leave", group: "Operations" },
+  { id: "projects", label: "Projects", group: "Research" },
+  { id: "publications", label: "Publications", group: "Research" },
+  { id: "files", label: "Files", group: "Resources" },
+  { id: "purchases", label: "Purchases", group: "Operations" },
+  { id: "budget", label: "Budget", group: "Operations" },
+  { id: "credentials", label: "Credentials", group: "Resources" },
+  { id: "admin", label: "Admin", group: "Admin" },
+  { id: "mypage", label: "My Page", group: "Admin" },
 ];
+
+const groupedItems = menuItems.reduce((acc, item) => {
+  acc[item.group] = acc[item.group] || [];
+  acc[item.group].push(item);
+  return acc;
+}, {});
 
 export default function Sidebar({ activePage, onNavigate, isOpen, onClose, currentUser }) {
   return (
     <>
       <aside className={`sidebar ${isOpen ? "open" : ""}`}>
         <div className="sidebar-brand">
-          <div className="brand-mark">AI</div>
           <div>
-            <strong>AICS Lab Hub</strong>
-            <span>Internal Portal</span>
+            <strong>AICS Lab</strong>
+            <span>Internal Hub</span>
           </div>
         </div>
 
-        <nav className="sidebar-nav" aria-label="주 메뉴">
-          {menuItems.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              className={activePage === item.id ? "active" : ""}
-              onClick={() => {
-                onNavigate(item.id);
-                onClose();
-              }}
-            >
-              {item.label}
-            </button>
+        <nav className="sidebar-nav" aria-label="전체 메뉴">
+          {Object.entries(groupedItems).map(([group, items]) => (
+            <div className="sidebar-group" key={group}>
+              <span className="sidebar-group-label">{group}</span>
+              {items.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  className={activePage === item.id ? "active" : ""}
+                  onClick={() => {
+                    onNavigate(item.id);
+                    onClose();
+                  }}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
           ))}
         </nav>
 

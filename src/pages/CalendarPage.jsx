@@ -37,8 +37,8 @@ export default function CalendarPage({ data, actions }) {
   return (
     <div className="page-stack">
       <SectionHeader
-        title="Calendar"
-        description="공유 일정과 개인 일정을 함께 확인합니다."
+        title="Lab Schedule"
+        description="공유 일정과 개인 일정을 월간 흐름과 upcoming list로 함께 확인합니다."
         actions={
           <div className="button-row">
             <Button variant="primary" onClick={() => actions.openCreate("calendarEvents")}>
@@ -51,61 +51,65 @@ export default function CalendarPage({ data, actions }) {
         }
       />
 
-      <section className="calendar-panel">
-        <div className="calendar-weekdays">
-          {weekdays.map((day) => (
-            <span key={day}>{day}</span>
-          ))}
-        </div>
-        <div className="calendar-grid">
-          {cells.map((cell, index) => (
-            <article key={`${cell?.date || "blank"}-${index}`} className={`calendar-cell ${cell ? "" : "muted"}`}>
-              {cell ? (
-                <>
-                  <strong>{cell.day}</strong>
-                  <div className="calendar-events">
-                    {(eventsByDate[cell.date] || []).slice(0, 3).map((event) => (
-                      <button key={event.id} type="button" onClick={() => actions.openEdit("calendarEvents", event)}>
-                        <Badge value={event.event_type} />
-                        <span>{event.title}</span>
-                      </button>
-                    ))}
-                  </div>
-                </>
-              ) : null}
-            </article>
-          ))}
-        </div>
-      </section>
+      <div className="schedule-layout">
+        <section className="calendar-panel">
+          <div className="calendar-weekdays">
+            {weekdays.map((day) => (
+              <span key={day}>{day}</span>
+            ))}
+          </div>
+          <div className="calendar-grid">
+            {cells.map((cell, index) => (
+              <article key={`${cell?.date || "blank"}-${index}`} className={`calendar-cell ${cell ? "" : "muted"}`}>
+                {cell ? (
+                  <>
+                    <strong>{cell.day}</strong>
+                    <div className="calendar-events">
+                      {(eventsByDate[cell.date] || []).slice(0, 3).map((event) => (
+                        <button key={event.id} type="button" onClick={() => actions.openEdit("calendarEvents", event)}>
+                          <Badge value={event.event_type} />
+                          <span>{event.title}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </>
+                ) : null}
+              </article>
+            ))}
+          </div>
+        </section>
 
-      <section className="panel">
-        <SectionHeader title="일정 목록" />
-        <div className="list-stack">
-          {data.calendarEvents.map((event) => (
-            <article key={event.id} className="list-item roomy">
-              <div>
-                <div className="inline-gap">
-                  <Badge value={event.event_type} />
-                  <Badge value={event.scope} />
-                  {event.is_recurring ? <Badge value="schedule">반복</Badge> : null}
+        <section className="panel home-section">
+          <SectionHeader title="Upcoming Events" />
+          <div className="section-list">
+            {data.calendarEvents.map((event) => (
+              <article key={event.id} className="section-list-item schedule-item">
+                <div>
+                  <div className="notice-meta">
+                    <Badge value={event.event_type} />
+                    <Badge value={event.scope} />
+                    {event.is_recurring ? <Badge value="schedule">반복</Badge> : null}
+                  </div>
+                  <strong>{event.title}</strong>
+                  <p>
+                    {formatDate(event.start_datetime)} - {formatDate(event.end_datetime)}
+                    <br />
+                    {event.location}
+                  </p>
                 </div>
-                <strong>{event.title}</strong>
-                <p>
-                  {formatDate(event.start_datetime)} - {formatDate(event.end_datetime)} · {event.location}
-                </p>
-              </div>
-              <div className="button-row">
-                <Button size="sm" variant="secondary" onClick={() => actions.openEdit("calendarEvents", event)}>
-                  일정 수정
-                </Button>
-                <Button size="sm" variant="danger" onClick={() => actions.deleteItem("calendarEvents", event.id, "일정")}>
-                  일정 삭제
-                </Button>
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
+                <div className="item-actions quiet-actions">
+                  <Button size="sm" variant="secondary" onClick={() => actions.openEdit("calendarEvents", event)}>
+                    수정
+                  </Button>
+                  <Button size="sm" variant="danger" onClick={() => actions.deleteItem("calendarEvents", event.id, "일정")}>
+                    삭제
+                  </Button>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+      </div>
     </div>
   );
 }

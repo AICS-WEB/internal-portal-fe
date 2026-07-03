@@ -383,6 +383,84 @@ function DetailModal({ detail, onClose }) {
   );
 }
 
+function formatNotificationTimestamp(value) {
+  if (!value) return "";
+  const [date, time = ""] = String(value).split("T");
+  return time ? `${date} ${time.slice(0, 5)}` : date;
+}
+
+function getNotificationCategory(notification) {
+  const text = `${notification.title || ""} ${notification.message || ""}`;
+  if (text.includes("휴가")) return { label: "휴가", tone: "leave" };
+  if (text.includes("구매")) return { label: "구매", tone: "purchase" };
+  if (text.includes("파일")) return { label: "파일", tone: "file" };
+  return { label: "운영", tone: "default" };
+}
+
+function NotificationModal({ notifications, onClose, onMarkAllRead }) {
+  const unreadCount = notifications.filter((notification) => !notification.read).length;
+
+  return (
+    <div className="modal-backdrop notification-backdrop" role="presentation" onMouseDown={onClose}>
+      <section
+        className="modal notification-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="notification-modal-title"
+        onMouseDown={(event) => event.stopPropagation()}
+      >
+        <header className="notification-modal-header">
+          <div className="notification-title-row">
+            <h2 id="notification-modal-title">알림</h2>
+            <span className="notification-count" aria-label={`알림 ${notifications.length}개`}>
+              {notifications.length}
+            </span>
+          </div>
+          <div className="notification-header-actions">
+            <Button size="sm" variant="secondary" onClick={onMarkAllRead} disabled={!unreadCount}>
+              모두 읽음
+            </Button>
+            <button type="button" className="notification-close-button" aria-label="알림 닫기" onClick={onClose}>
+              X
+            </button>
+          </div>
+        </header>
+
+        <div className="notification-modal-body">
+          {notifications.length ? (
+            <div className="notification-list">
+              {notifications.map((notification) => {
+                const category = getNotificationCategory(notification);
+                return (
+                  <article
+                    key={notification.id}
+                    className={`notification-item ${notification.read ? "notification-read" : "notification-unread"}`}
+                  >
+                    <span className="notification-unread-dot" aria-hidden="true" />
+                    <div className="notification-item-content">
+                      <div className="notification-meta">
+                        <span className={`notification-category notification-category-${category.tone}`}>{category.label}</span>
+                        <time dateTime={notification.created_at}>{formatNotificationTimestamp(notification.created_at)}</time>
+                      </div>
+                      <h3>{notification.title}</h3>
+                      <p>{notification.message}</p>
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          ) : (
+            <div className="notification-empty">
+              <strong>새 알림이 없습니다.</strong>
+              <p>새로운 승인 요청과 연구실 업데이트가 여기에 표시됩니다.</p>
+            </div>
+          )}
+        </div>
+      </section>
+    </div>
+  );
+}
+
 export default function App() {
   const [activePage, setActivePage] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -391,6 +469,7 @@ export default function App() {
   const [data, setData] = useState(() => cloneData(initialData));
   const [formModal, setFormModal] = useState(null);
   const [detailModal, setDetailModal] = useState(null);
+  const [notificationModalOpen, setNotificationModalOpen] = useState(false);
   const [confirmModal, setConfirmModal] = useState(null);
   const [toast, setToast] = useState(null);
 
@@ -495,13 +574,12 @@ export default function App() {
   };
 
   const showNotifications = () => {
-    openDetail(
-      "알림",
-      data.notifications.map((notification) => ({
-        label: notification.title,
-        value: `${notification.message} · ${notification.created_at}`,
-      })),
-    );
+    setNotificationModalOpen(true);
+  };
+
+  const markAllNotificationsRead = () => {
+    updateCollection("notifications", (items) => items.map((item) => ({ ...item, read: true })));
+    showToast("모든 알림을 읽음 처리했습니다.");
   };
 
   const submitForm = (values) => {
@@ -556,6 +634,13 @@ export default function App() {
 
       {formModal ? <FormModal modal={formModal} onClose={() => setFormModal(null)} onSubmit={submitForm} /> : null}
       {detailModal ? <DetailModal detail={detailModal} onClose={() => setDetailModal(null)} /> : null}
+      {notificationModalOpen ? (
+        <NotificationModal
+          notifications={data.notifications}
+          onClose={() => setNotificationModalOpen(false)}
+          onMarkAllRead={markAllNotificationsRead}
+        />
+      ) : null}
       {confirmModal ? (
         <ConfirmModal
           title={confirmModal.title}

@@ -11,12 +11,11 @@ const quickItems = [
 ];
 
 const navItems = [
-  { id: "dashboard", label: "Dashboard" },
-  { id: "notices", label: "Notices" },
-  { id: "calendar", label: "Calendar" },
-  { id: "projects", label: "Research" },
-  { id: "files", label: "Resources" },
-  { id: "admin", label: "Admin" },
+  { id: "dashboard", label: "Dashboard", pages: ["dashboard"] },
+  { id: "attendance", label: "Operations", pages: ["attendance", "leave", "calendar", "purchases", "budget"] },
+  { id: "projects", label: "Research", pages: ["projects", "publications", "notices"] },
+  { id: "files", label: "Resources", pages: ["files", "credentials"] },
+  { id: "admin", label: "Admin", pages: ["admin", "mypage"] },
 ];
 
 export default function Header({
@@ -51,7 +50,7 @@ export default function Header({
           <button
             key={item.id}
             type="button"
-            className={activePage === item.id ? "active" : ""}
+            className={item.pages.includes(activePage) ? "active" : ""}
             onClick={() => onNavigate(item.id)}
           >
             {item.label}

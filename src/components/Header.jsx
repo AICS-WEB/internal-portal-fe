@@ -20,6 +20,7 @@ export default function Header({
   onQuickCreate,
   onShowNotifications,
   onProfileClick,
+  onLogoutClick,
 }) {
   const [quickOpen, setQuickOpen] = useState(false);
   const unreadCount = notifications.filter((item) => !item.read).length;
@@ -43,6 +44,9 @@ export default function Header({
         </Button>
         <Button variant="ghost" onClick={onProfileClick}>
           {currentUser.name}
+        </Button>
+        <Button variant="secondary" onClick={onLogoutClick}>
+          로그아웃
         </Button>
         <div className="quick-create">
           <Button variant="primary" onClick={() => setQuickOpen((open) => !open)}>

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { clearAuthSession, readAuthSession, saveAuthSession } from "./api/auth.js";
 import Button from "./components/Button.jsx";
 import ConfirmModal from "./components/ConfirmModal.jsx";
 import Header from "./components/Header.jsx";
@@ -13,11 +14,13 @@ import CredentialsPage from "./pages/CredentialsPage.jsx";
 import DashboardPage from "./pages/DashboardPage.jsx";
 import FilesPage from "./pages/FilesPage.jsx";
 import LeavePage from "./pages/LeavePage.jsx";
+import LoginPage from "./pages/LoginPage.jsx";
 import MyPage from "./pages/MyPage.jsx";
 import NoticesPage from "./pages/NoticesPage.jsx";
 import ProjectsPage from "./pages/ProjectsPage.jsx";
 import PublicationsPage from "./pages/PublicationsPage.jsx";
 import PurchasesPage from "./pages/PurchasesPage.jsx";
+import RegisterPage from "./pages/RegisterPage.jsx";
 import {
   attendanceRecords,
   budgets,
@@ -384,10 +387,12 @@ function DetailModal({ detail, onClose }) {
 }
 
 export default function App() {
+  const [authSession, setAuthSession] = useState(() => readAuthSession());
+  const [showRegister, setShowRegister] = useState(() => window.location.hash === "#/register");
   const [activePage, setActivePage] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [globalSearch, setGlobalSearch] = useState("");
-  const [currentUser, setCurrentUser] = useState({ ...mockCurrentUser });
+  const [currentUser, setCurrentUser] = useState(() => ({ ...mockCurrentUser, ...(readAuthSession()?.user || {}) }));
   const [data, setData] = useState(() => cloneData(initialData));
   const [formModal, setFormModal] = useState(null);
   const [detailModal, setDetailModal] = useState(null);
@@ -397,6 +402,12 @@ export default function App() {
   const resourceConfigs = useMemo(() => buildResourceConfigs(currentUser, data), [currentUser, data]);
   const activeMeta = pageRegistry[activePage] || pageRegistry.dashboard;
   const ActivePage = activeMeta.component;
+
+  useEffect(() => {
+    const handleHashChange = () => setShowRegister(window.location.hash === "#/register");
+    window.addEventListener("hashchange", handleHashChange);
+    return () => window.removeEventListener("hashchange", handleHashChange);
+  }, []);
 
   useEffect(() => {
     if (!toast) return undefined;
@@ -525,6 +536,39 @@ export default function App() {
     canAccess: (item) => canAccess(currentUser, item),
   };
 
+  const openRegister = () => {
+    window.location.hash = "/register";
+    setShowRegister(true);
+  };
+
+  const closeRegister = () => {
+    window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
+    setShowRegister(false);
+  };
+
+  const handleLogin = (session) => {
+    saveAuthSession(session);
+    setAuthSession(session);
+    setCurrentUser((current) => ({ ...current, ...session.user, account_status: "approved" }));
+    window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
+    setShowRegister(false);
+  };
+
+  const handleLogout = () => {
+    clearAuthSession();
+    setAuthSession(null);
+    setShowRegister(false);
+    window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
+  };
+
+  if (!authSession && showRegister) {
+    return <RegisterPage onBack={closeRegister} />;
+  }
+
+  if (!authSession) {
+    return <LoginPage onLogin={handleLogin} onRegister={openRegister} />;
+  }
+
   return (
     <div className="app-shell">
       <Sidebar
@@ -546,6 +590,7 @@ export default function App() {
           onQuickCreate={openCreate}
           onShowNotifications={showNotifications}
           onProfileClick={() => setActivePage("mypage")}
+          onLogoutClick={handleLogout}
         />
         <div className="content-area">
           <ActivePage data={data} currentUser={currentUser} actions={actions} globalSearch={globalSearch} />

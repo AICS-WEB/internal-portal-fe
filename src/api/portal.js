@@ -75,6 +75,27 @@ const payloadMappers = {
     amount: Number(value.amount),
     date: value.date,
   }),
+  budgets: (value) => ({
+    name: value.name,
+    fundType: value.fund_type,
+    projectId: value.project_id === "" ? null : value.project_id || null,
+    totalBudget: Number(value.total_budget),
+    startDate: value.start_date,
+    endDate: value.end_date,
+    status: value.status,
+  }),
+  researchProjects: (value) => ({
+    title: value.title,
+    fundingAgency: value.funding_agency || null,
+    program: value.program || null,
+    startDate: value.start_date || null,
+    endDate: value.end_date || null,
+    owner: value.owner || null,
+    role: value.role || null,
+    status: value.status || null,
+    isPublic: Boolean(value.is_public),
+    displayOrder: Number(value.display_order || 0),
+  }),
   notices: (value) => ({
     title: value.title,
     content: value.content,
@@ -85,11 +106,15 @@ const payloadMappers = {
 };
 
 const resourcePaths = {
+  notices: "/notices",
   calendarEvents: "/calendar/events",
   publications: "/publications",
   sharedFiles: "/files",
   sharedCredentials: "/credentials",
   leaveRequests: "/leave/requests",
+  purchaseRequests: "/procurement/requests",
+  budgets: "/budget/budgets",
+  researchProjects: "/research-projects",
 };
 
 export function toApiPayload(resource, value) {
@@ -112,6 +137,19 @@ export function normalizeResource(resource, value) {
   }
   if (resource === "leaveRequests") return { ...value, requested_at: dateOnly(value.requested_at || value.created_at) };
   if (resource === "purchaseRequests") return { ...value, requested_at: dateOnly(value.requested_at || value.created_at) };
+  if (resource === "budgets") {
+    return {
+      ...value,
+      total_budget: Number(value.total_budget || 0),
+      used_amount: Number(value.used_amount || 0),
+      start_date: dateOnly(value.start_date),
+      end_date: dateOnly(value.end_date),
+    };
+  }
+  if (resource === "expenses") {
+    return { ...value, amount: Number(value.amount || 0), date: dateOnly(value.date) };
+  }
+  if (resource === "researchProjects") return normalizeProject(value);
   return value;
 }
 
@@ -166,6 +204,10 @@ export async function getNotice(id) {
   return normalizeNotice(data.notice);
 }
 
+export async function setNoticePinned(id, isPinned) {
+  return apiRequest(`/notices/${id}/pin`, { method: "PATCH", body: { isPinned } });
+}
+
 export async function getPublication(id) {
   return apiRequest(`/publications/${id}`);
 }
@@ -217,6 +259,16 @@ export async function reviewExpense(id, status, rejectReason = null) {
   return data.result;
 }
 
+export async function getBudgets() {
+  const items = await apiRequest("/budget/budgets");
+  return items.map((item) => normalizeResource("budgets", item));
+}
+
+export async function getExpenses(query) {
+  const items = await apiRequest("/budget/expenses", { query });
+  return items.map((item) => normalizeResource("expenses", item));
+}
+
 export async function checkAttendance(type) {
   const path = type === "in" ? "check-in" : "check-out";
   const data = await apiRequest(`/attendance/${path}`, { method: "POST" });
@@ -237,6 +289,47 @@ export async function patchAttendanceRecord(record, values) {
 export async function reviewPendingUser(id, decision) {
   const data = await apiRequest(`/users/${id}/${decision}`, { method: "PATCH" });
   return data.user;
+}
+
+export async function changeUserRole(id, role) {
+  const data = await apiRequest(`/users/${id}/role`, { method: "PATCH", body: { role } });
+  return data.user;
+}
+
+export async function changeUserStatus(id, status) {
+  const data = await apiRequest(`/users/${id}/status`, { method: "PATCH", body: { status } });
+  return data.user;
+}
+
+export async function getMyProfile() {
+  return apiRequest("/users/me/profile");
+}
+
+export async function updateMyProfile(value) {
+  return apiRequest("/users/me", {
+    method: "PATCH",
+    body: {
+      name: value.name,
+      department: value.department || null,
+      program: value.program || null,
+      enrollmentYear: value.enrollment_year === "" ? null : value.enrollment_year,
+      researchTopic: value.research_topic || null,
+      phone: value.phone || null,
+      bio: value.bio || null,
+      githubUrl: value.github_url || null,
+      linkedinUrl: value.linkedin_url || null,
+      profileImage: value.profile_image || null,
+      isPublic: Boolean(value.is_public),
+      preferredLanguage: value.preferred_language,
+    },
+  });
+}
+
+export async function changeMyPassword(currentPassword, newPassword) {
+  return apiRequest("/users/me/password", {
+    method: "POST",
+    body: { currentPassword, newPassword },
+  });
 }
 
 export async function revealCredential(id) {
@@ -266,9 +359,11 @@ function dateOnly(value) {
 function normalizeNotice(value) {
   return {
     ...value,
-    author: value.author ?? value.author_name ?? "-",
-    views: Number(value.views ?? value.view_count ?? 0),
-    created_at: dateOnly(value.created_at),
+    is_pinned: Boolean(value.is_pinned ?? value.isPinned),
+    author: value.author ?? value.author_name ?? value.authorName ?? "-",
+    views: Number(value.views ?? value.view_count ?? value.viewCount ?? 0),
+    created_at: dateOnly(value.created_at ?? value.createdAt),
+    updated_at: dateOnly(value.updated_at ?? value.updatedAt),
   };
 }
 
@@ -277,13 +372,16 @@ function normalizeNotification(value) {
 }
 
 function normalizeProject(value) {
-  const rawStatus = String(value.status || "").toLowerCase();
   return {
     ...value,
-    funding_agency: value.funding_agency || value.program || value.organization || value.sponsor || "-",
-    owner: value.owner || value.principal_investigator || value.pi_name || "-",
-    role: value.role || "-",
-    status: rawStatus === "ongoing" || rawStatus === "active" ? "active" : "closed",
+    funding_agency: value.funding_agency || value.organization || value.sponsor || "",
+    owner: value.owner || value.principal_investigator || value.pi_name || "",
+    role: value.role || "",
+    status: value.status || "",
+    start_date: dateOnly(value.start_date),
+    end_date: dateOnly(value.end_date),
+    is_public: Boolean(value.is_public),
+    display_order: Number(value.display_order || 0),
   };
 }
 
@@ -295,15 +393,9 @@ function calendarRange() {
 export async function loadPortalData(currentUser) {
   const loaders = {
     users: Promise.all([
-      apiRequest("/public/members", { auth: false }),
-      ["manager", "admin"].includes(currentUser?.role)
-        ? apiRequest("/users/pending").then((data) => data.users || [])
-        : Promise.resolve([]),
-    ]).then(([groups, pendingUsers]) => {
-      const members = [...(groups.current_students || []), ...(groups.alumni || [])];
-      const profile = members.find((member) => Number(member.id) === Number(currentUser?.id));
-      return [{ ...(profile || {}), ...currentUser }, ...pendingUsers];
-    }),
+      getMyProfile(),
+      ["manager", "admin"].includes(currentUser?.role) ? apiRequest("/users") : Promise.resolve([]),
+    ]).then(([profile, users]) => [profile, ...users.filter((user) => Number(user.id) !== Number(profile.id))]),
     attendanceRecords: apiRequest("/attendance/records").then((items) => items.map((item) => normalizeAttendanceRecord(item))),
     notices: apiRequest("/notices").then((data) => (data.notices || []).map(normalizeNotice)),
     calendarEvents: apiRequest("/calendar/events", { query: calendarRange() }).then((items) => items.map((item) => normalizeResource("calendarEvents", item))),
@@ -314,7 +406,9 @@ export async function loadPortalData(currentUser) {
     notifications: apiRequest("/notifications").then((items) => items.map(normalizeNotification)),
     leaveBalances: apiRequest("/leave/balance").then((item) => [item]),
     leaveRequests: apiRequest("/leave/requests").then((items) => items.map((item) => normalizeResource("leaveRequests", item))),
-    researchProjects: apiRequest("/public/research-projects", { auth: false }).then((items) => items.map(normalizeProject)),
+    researchProjects: apiRequest("/research-projects").then((items) => items.map(normalizeProject)),
+    budgets: getBudgets(),
+    expenses: getExpenses(),
   };
 
   const entries = await Promise.all(
@@ -329,8 +423,6 @@ export async function loadPortalData(currentUser) {
 
   const data = {
     users: currentUser ? [currentUser] : [],
-    budgets: [],
-    expenses: [],
   };
   const errors = [];
   entries.forEach(([key, value, error]) => {

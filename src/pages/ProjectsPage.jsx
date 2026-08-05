@@ -1,18 +1,20 @@
 import { useMemo, useState } from "react";
 import Badge from "../components/Badge.jsx";
+import Button from "../components/Button.jsx";
 import FilterTabs from "../components/FilterTabs.jsx";
 import SearchInput from "../components/SearchInput.jsx";
 import SectionHeader from "../components/SectionHeader.jsx";
+import { hasRole } from "../utils/permissions.js";
 
-const statusOptions = [
-  { value: "all", label: "전체" },
-  { value: "active", label: "진행" },
-  { value: "closed", label: "종료" },
-];
-
-export default function ProjectsPage({ data, globalSearch }) {
+export default function ProjectsPage({ data, currentUser, actions, globalSearch }) {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
+  const canManage = hasRole(currentUser, "manager");
+  const statusOptions = useMemo(() => [
+    { value: "all", label: "전체" },
+    ...[...new Set(data.researchProjects.map((project) => project.status).filter(Boolean))]
+      .map((value) => ({ value, label: value })),
+  ], [data.researchProjects]);
 
   const projects = useMemo(() => {
     const query = `${search} ${globalSearch}`.trim().toLowerCase();
@@ -28,7 +30,10 @@ export default function ProjectsPage({ data, globalSearch }) {
     <div className="page-stack">
       <SectionHeader
         title="Projects"
-        description="공개 연구과제 API에서 상태와 주요 기간을 조회합니다."
+        description="내부 연구과제의 상태와 공개 여부를 관리합니다."
+        actions={canManage ? (
+          <Button variant="primary" onClick={() => actions.openCreate("researchProjects")}>과제 등록</Button>
+        ) : null}
       />
 
       <section className="toolbar-panel">
@@ -40,11 +45,11 @@ export default function ProjectsPage({ data, globalSearch }) {
         {projects.map((project) => (
           <article key={project.id} className="project-card">
             <div className="card-topline">
-              <Badge value={project.status} />
-              <span>{project.role}</span>
+              <Badge value={project.status || "unknown"} />
+              <Badge value={project.is_public ? "public" : "private"} />
             </div>
             <h2>{project.title}</h2>
-            <p>{project.funding_agency}</p>
+            <p>{project.funding_agency || "-"}</p>
             <dl className="meta-grid">
               <div>
                 <dt>기간</dt>
@@ -54,9 +59,19 @@ export default function ProjectsPage({ data, globalSearch }) {
               </div>
               <div>
                 <dt>담당</dt>
-                <dd>{project.owner}</dd>
+                <dd>{project.owner || "-"}</dd>
+              </div>
+              <div>
+                <dt>사업 / 역할</dt>
+                <dd>{project.program || "-"} / {project.role || "-"}</dd>
               </div>
             </dl>
+            {canManage ? (
+              <div className="table-actions">
+                <Button size="sm" variant="secondary" onClick={() => actions.openEdit("researchProjects", project)}>수정</Button>
+                <Button size="sm" variant="danger" onClick={() => actions.deleteItem("researchProjects", project.id, "연구과제")}>삭제</Button>
+              </div>
+            ) : null}
           </article>
         ))}
       </section>

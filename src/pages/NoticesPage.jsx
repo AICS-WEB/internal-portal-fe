@@ -21,6 +21,7 @@ export default function NoticesPage({ data, currentUser, actions, globalSearch }
   const [category, setCategory] = useState("all");
   const [sort, setSort] = useState("latest");
   const [page, setPage] = useState(1);
+  const canManage = hasRole(currentUser, "manager");
 
   const filteredNotices = useMemo(() => {
     const query = `${search} ${globalSearch}`.trim().toLowerCase();
@@ -65,6 +66,15 @@ export default function NoticesPage({ data, currentUser, actions, globalSearch }
           <Button size="sm" variant="secondary" onClick={() => actions.openNoticeDetail(notice)}>
             상세 보기
           </Button>
+          {canManage ? (
+            <>
+              <Button size="sm" variant="secondary" onClick={() => actions.updateItem("notices", notice.id, { is_pinned: !notice.is_pinned })}>
+                {notice.is_pinned ? "고정 해제" : "상단 고정"}
+              </Button>
+              <Button size="sm" variant="secondary" onClick={() => actions.openNoticeEdit(notice)}>수정</Button>
+              <Button size="sm" variant="danger" onClick={() => actions.deleteItem("notices", notice.id, "공지")}>삭제</Button>
+            </>
+          ) : null}
         </div>
       ),
     },
@@ -75,7 +85,7 @@ export default function NoticesPage({ data, currentUser, actions, globalSearch }
       <SectionHeader
         title="공지사항"
         description="연구실 공지, 계정 안내, 일정 안내를 한 곳에서 관리합니다."
-        actions={hasRole(currentUser, "manager") ? (
+        actions={canManage ? (
           <Button variant="primary" onClick={() => actions.openCreate("notices")}>
             공지 등록
           </Button>

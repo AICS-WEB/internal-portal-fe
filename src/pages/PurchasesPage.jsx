@@ -42,23 +42,31 @@ export default function PurchasesPage({ data, currentUser, actions }) {
     {
       key: "actions",
       header: "작업",
-      render: (item) => (
-        <div className="table-actions">
-          {canReview && item.status === "pending" ? (
-            <>
-              <Button size="sm" variant="secondary" onClick={() => actions.updateItem("purchaseRequests", item.id, { status: "approved" })}>승인</Button>
-              <Button size="sm" variant="secondary" onClick={() => actions.updateItem("purchaseRequests", item.id, { status: "rejected" })}>반려</Button>
-            </>
-          ) : null}
-          {canReview && item.status === "approved" ? (
-            <Button size="sm" variant="secondary" onClick={() => actions.updateItem("purchaseRequests", item.id, { status: "purchased" })}>구매 완료 처리</Button>
-          ) : null}
-          {canReview && item.status === "purchased" ? (
-            <Button size="sm" variant="secondary" onClick={() => actions.updateItem("purchaseRequests", item.id, { status: "delivered" })}>입고 완료 처리</Button>
-          ) : null}
-          {!canReview || ["rejected", "delivered"].includes(item.status) ? "-" : null}
-        </div>
-      ),
+      render: (item) => {
+        const isOwner = item.requester === currentUser.name;
+        const canEdit = isOwner && item.status === "pending";
+        const canDelete = canReview || canEdit;
+        const hasWorkflowAction = canReview && ["pending", "approved", "purchased"].includes(item.status);
+        return (
+          <div className="table-actions">
+            {canReview && item.status === "pending" ? (
+              <>
+                <Button size="sm" variant="secondary" onClick={() => actions.updateItem("purchaseRequests", item.id, { status: "approved" })}>승인</Button>
+                <Button size="sm" variant="secondary" onClick={() => actions.updateItem("purchaseRequests", item.id, { status: "rejected" })}>반려</Button>
+              </>
+            ) : null}
+            {canReview && item.status === "approved" ? (
+              <Button size="sm" variant="secondary" onClick={() => actions.updateItem("purchaseRequests", item.id, { status: "purchased" })}>구매 완료 처리</Button>
+            ) : null}
+            {canReview && item.status === "purchased" ? (
+              <Button size="sm" variant="secondary" onClick={() => actions.updateItem("purchaseRequests", item.id, { status: "delivered" })}>입고 완료 처리</Button>
+            ) : null}
+            {canEdit ? <Button size="sm" variant="secondary" onClick={() => actions.openEdit("purchaseRequests", item)}>수정</Button> : null}
+            {canDelete ? <Button size="sm" variant="danger" onClick={() => actions.deleteItem("purchaseRequests", item.id, "구매 신청")}>삭제</Button> : null}
+            {!hasWorkflowAction && !canEdit && !canDelete ? "-" : null}
+          </div>
+        );
+      },
     },
   ];
 

@@ -1,14 +1,24 @@
 import Badge from "../components/Badge.jsx";
+import Button from "../components/Button.jsx";
 import SectionHeader from "../components/SectionHeader.jsx";
 
-export default function MyPage({ currentUser }) {
+export default function MyPage({ currentUser, actions }) {
   return (
     <div className="page-stack">
-      <SectionHeader title="My Page" description="내 프로필과 공개 여부를 관리합니다." />
+      <SectionHeader
+        title="My Page"
+        description="내 프로필과 공개 여부를 관리합니다."
+        actions={
+          <>
+            <Button variant="secondary" onClick={actions.openPasswordChange}>비밀번호 변경</Button>
+            <Button variant="primary" onClick={actions.updateCurrentUser}>프로필 수정</Button>
+          </>
+        }
+      />
 
       <section className="profile-layout">
         <article className="profile-card">
-          <div className="profile-avatar">{currentUser.name.slice(0, 1)}</div>
+          <div className="profile-avatar">{currentUser.name?.slice(0, 1) || "-"}</div>
           <h2>{currentUser.name}</h2>
           <p>{currentUser.email}</p>
           <div className="inline-gap center">
@@ -51,12 +61,15 @@ export default function MyPage({ currentUser }) {
             </div>
             <div>
               <dt>phone</dt>
-              <dd>{currentUser.phone}</dd>
+              <dd>{currentUser.phone || "-"}</dd>
+            </div>
+            <div>
+              <dt>preferred_language</dt>
+              <dd>{currentUser.preferred_language || "ko"}</dd>
             </div>
           </dl>
           <p className="muted-note">phone은 연구실 내부 연락을 위한 전용 정보입니다.</p>
-          <p className="profile-bio">{currentUser.bio}</p>
-          <p className="muted-note">프로필 수정과 비밀번호 변경은 대응 백엔드 API가 추가되면 활성화됩니다.</p>
+          <p className="profile-bio">{currentUser.bio || "등록된 소개가 없습니다."}</p>
         </article>
       </section>
     </div>

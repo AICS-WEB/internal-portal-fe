@@ -6,7 +6,7 @@ import { formatCurrency } from "../utils/format.js";
 import { hasRole } from "../utils/permissions.js";
 
 export default function BudgetPage({ data, currentUser, actions }) {
-  const canReview = hasRole(currentUser, "manager");
+  const canManage = hasRole(currentUser, "manager");
   const columns = [
     {
       key: "item_name",
@@ -14,7 +14,7 @@ export default function BudgetPage({ data, currentUser, actions }) {
       render: (expense) => (
         <div className="cell-main">
           <strong>{expense.item_name}</strong>
-          <span>{data.budgets.find((budget) => budget.id === expense.budget_id)?.name || expense.budget_id}</span>
+          <span>{expense.budget_name || data.budgets.find((budget) => budget.id === expense.budget_id)?.name || expense.budget_id}</span>
         </div>
       ),
     },
@@ -27,7 +27,7 @@ export default function BudgetPage({ data, currentUser, actions }) {
       header: "작업",
       render: (expense) => (
         <div className="table-actions">
-          {canReview && expense.status === "pending" ? (
+          {canManage && expense.status === "pending" ? (
             <>
               <Button size="sm" variant="secondary" onClick={() => actions.updateItem("expenses", expense.id, { status: "approved" })}>지출 승인</Button>
               <Button size="sm" variant="secondary" onClick={() => actions.updateItem("expenses", expense.id, { status: "rejected" })}>지출 반려</Button>
@@ -44,15 +44,20 @@ export default function BudgetPage({ data, currentUser, actions }) {
         title="Budget"
         description="예산 사용 현황과 지출 승인 상태를 확인합니다."
         actions={
-          <Button variant="primary" onClick={() => actions.openCreate("expenses")}>지출 등록</Button>
+          <>
+            {canManage ? <Button variant="secondary" onClick={() => actions.openCreate("budgets")}>예산 등록</Button> : null}
+            <Button variant="primary" onClick={() => actions.openCreate("expenses")} disabled={!data.budgets.length}>지출 등록</Button>
+          </>
         }
       />
 
-      {!data.budgets.length ? <p className="muted-note">예산 장부 조회 API가 없어 지출 등록 시 budget_id를 직접 입력해야 합니다.</p> : null}
+      {!data.budgets.length ? <p className="muted-note">등록된 예산 장부가 없습니다. 관리자가 예산을 먼저 등록해야 지출을 신청할 수 있습니다.</p> : null}
 
       <section className="budget-grid">
         {data.budgets.map((budget) => {
-          const percent = Math.min(100, Math.round((budget.used_amount / budget.total_budget) * 100));
+          const percent = budget.total_budget > 0
+            ? Math.min(100, Math.round((budget.used_amount / budget.total_budget) * 100))
+            : 0;
           return (
             <article key={budget.id} className="budget-card">
               <div className="card-topline">
@@ -71,6 +76,12 @@ export default function BudgetPage({ data, currentUser, actions }) {
               <p>
                 {budget.start_date} - {budget.end_date}
               </p>
+              {canManage ? (
+                <div className="table-actions">
+                  <Button size="sm" variant="secondary" onClick={() => actions.openEdit("budgets", budget)}>수정</Button>
+                  <Button size="sm" variant="danger" onClick={() => actions.deleteItem("budgets", budget.id, "예산 장부")}>삭제</Button>
+                </div>
+              ) : null}
             </article>
           );
         })}

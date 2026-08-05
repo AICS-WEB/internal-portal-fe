@@ -2,6 +2,9 @@ import { useEffect, useMemo, useState } from "react";
 import { clearAuthSession, logoutUser, readAuthSession, saveAuthSession } from "./api/auth.js";
 import {
   advancePurchase,
+  changeMyPassword,
+  changeUserRole,
+  changeUserStatus,
   checkAttendance,
   createExpense,
   createLeave,
@@ -10,6 +13,8 @@ import {
   createResource,
   deleteResource,
   getFileDownload,
+  getBudgets,
+  getExpenses,
   getLeaveBalance,
   getNotice,
   getPublication,
@@ -22,9 +27,10 @@ import {
   revealCredential,
   reviewExpense,
   reviewLeave,
-  reviewPendingUser,
   reviewPurchase,
+  setNoticePinned,
   updateResource,
+  updateMyProfile,
 } from "./api/portal.js";
 import Button from "./components/Button.jsx";
 import ConfirmModal from "./components/ConfirmModal.jsx";
@@ -168,14 +174,26 @@ function buildResourceConfigs(currentUser, data) {
     researchProjects: {
       createTitle: "과제 등록",
       editTitle: "과제 수정",
-      defaults: { status: "active", role: "참여", start_date: todayISO(), end_date: todayISO() },
+      defaults: {
+        status: "active",
+        role: "참여",
+        owner: currentUser.name,
+        start_date: todayISO(),
+        end_date: todayISO(),
+        is_public: false,
+        display_order: 0,
+      },
       fields: [
-        { name: "title", label: "title", type: "text" },
-        { name: "funding_agency", label: "funding_agency", type: "text" },
-        { name: "start_date", label: "start_date", type: "date" },
-        { name: "end_date", label: "end_date", type: "date" },
-        { name: "role", label: "role", type: "text" },
-        { name: "status", label: "status", type: "select", options: ["active", "closed"] },
+        { name: "title", label: "과제명", type: "text" },
+        { name: "funding_agency", label: "지원기관", type: "text" },
+        { name: "program", label: "사업명", type: "text" },
+        { name: "start_date", label: "시작일", type: "date" },
+        { name: "end_date", label: "종료일", type: "date" },
+        { name: "owner", label: "담당자", type: "text" },
+        { name: "role", label: "역할", type: "text" },
+        { name: "status", label: "상태", type: "text" },
+        { name: "is_public", label: "공개 홈페이지 노출", type: "checkbox" },
+        { name: "display_order", label: "표시 순서", type: "number" },
       ],
       create: (values) => ({ id: uid("project"), ...values, owner: currentUser.name }),
     },
@@ -231,12 +249,44 @@ function buildResourceConfigs(currentUser, data) {
         requested_at: todayISO(),
       }),
     },
+    budgets: {
+      createTitle: "예산 등록",
+      editTitle: "예산 수정",
+      defaults: {
+        fund_type: "research",
+        project_id: "",
+        total_budget: 0,
+        start_date: todayISO(),
+        end_date: todayISO(),
+        status: "active",
+      },
+      fields: [
+        { name: "name", label: "예산명", type: "text" },
+        { name: "fund_type", label: "재원 구분", type: "select", options: ["department", "research", "other"] },
+        {
+          name: "project_id",
+          label: "연구과제 (선택)",
+          type: "select",
+          options: [option("", "연결 안 함"), ...data.researchProjects.map((project) => option(project.id, project.title))],
+        },
+        { name: "total_budget", label: "총 예산액", type: "number" },
+        { name: "start_date", label: "시작일", type: "date" },
+        { name: "end_date", label: "종료일", type: "date" },
+        { name: "status", label: "상태", type: "select", options: ["active", "completed", "pending"] },
+      ],
+      create: (values) => ({ id: uid("budget"), ...values, used_amount: 0 }),
+    },
     expenses: {
       createTitle: "지출 등록",
       editTitle: "지출 수정",
       defaults: { budget_id: data.budgets[0]?.id || "", category: "material", amount: 0, date: todayISO(), status: "pending" },
       fields: [
-        { name: "budget_id", label: "budget_id", type: "number" },
+        {
+          name: "budget_id",
+          label: "예산 장부",
+          type: "select",
+          options: data.budgets.map((budget) => option(budget.id, budget.name)),
+        },
         { name: "category", label: "category", type: "select", options: ["personnel", "activity", "material", "other"] },
         { name: "item_name", label: "item_name", type: "text" },
         { name: "amount", label: "amount", type: "number" },
@@ -431,7 +481,7 @@ export default function App() {
     loadPortalData(user)
       .then(({ data: loadedData, errors }) => {
         if (!active) return;
-        const enrichedUser = { ...loadedData.users?.[0], ...user };
+        const enrichedUser = { ...user, ...loadedData.users?.[0] };
         setCurrentUser(enrichedUser);
         setData({ ...cloneData(initialData), ...loadedData, users: [enrichedUser, ...(loadedData.users || []).slice(1)] });
         if (errors.length) {
@@ -471,9 +521,18 @@ export default function App() {
     updateCollection(key, (items) => items.map((item) => (item.id === id ? { ...item, ...value } : item)));
   };
 
+  const refreshBudgetData = async () => {
+    const [budgets, expenses] = await Promise.all([getBudgets(), getExpenses()]);
+    setData((current) => ({ ...current, budgets, expenses }));
+  };
+
   const openCreate = (key, overrides = {}) => {
     if (key === "notices" && !hasRole(currentUser, "manager")) {
       showToast("공지 등록은 관리자만 사용할 수 있습니다.", "warning");
+      return;
+    }
+    if (key === "expenses" && !data.budgets.length) {
+      showToast("지출을 등록하려면 먼저 예산 장부를 등록해 주세요.", "warning");
       return;
     }
     const config = resourceConfigs[key];
@@ -501,7 +560,8 @@ export default function App() {
           user_name: created?.user_name || currentUser.name,
           requester: created?.requester || currentUser.name,
         });
-        updateCollection(key, (items) => [normalized, ...items]);
+        if (key === "expenses") await refreshBudgetData();
+        else updateCollection(key, (items) => [normalized, ...items]);
         if (key === "leaveRequests") {
           const balance = await getLeaveBalance();
           updateCollection("leaveBalances", [balance]);
@@ -521,6 +581,7 @@ export default function App() {
       successMessage: `${config.editTitle}이 완료되었습니다.`,
       onSubmit: async (values) => {
         const updated = normalizeResource(key, await updateResource(key, item.id, values));
+        if (key === "budgets") updated.used_amount = item.used_amount;
         replaceItem(key, item.id, updated);
       },
     });
@@ -545,6 +606,11 @@ export default function App() {
             getLeaveBalance()
               .then((balance) => updateCollection("leaveBalances", [balance]))
               .catch(() => showToast("휴가 신청은 삭제되었지만 잔여일 갱신에 실패했습니다.", "warning"));
+          }
+          if (key === "researchProjects") {
+            updateCollection("budgets", (items) => items.map((budget) => (
+              Number(budget.project_id) === Number(id) ? { ...budget, project_id: null } : budget
+            )));
           }
         } catch (error) {
           showToast(error.message, "error");
@@ -572,6 +638,16 @@ export default function App() {
     }
   };
 
+  const openNoticeEdit = async (notice) => {
+    try {
+      const detail = await getNotice(notice.id);
+      replaceItem("notices", notice.id, detail);
+      openEdit("notices", { ...notice, ...detail });
+    } catch (error) {
+      showToast(error.message, "error");
+    }
+  };
+
   const copyText = (text, message = "복사되었습니다.") => {
     if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
       navigator.clipboard.writeText(text).catch(() => {});
@@ -579,8 +655,60 @@ export default function App() {
     showToast(message);
   };
 
+  const persistCurrentUser = (updated) => {
+    const nextUser = { ...currentUser, ...updated };
+    setCurrentUser(nextUser);
+    updateCollection("users", (items) => items.map((user) => (
+      Number(user.id) === Number(nextUser.id) ? { ...user, ...nextUser } : user
+    )));
+    const session = readAuthSession();
+    if (session) saveAuthSession({ ...session, user: { ...session.user, ...updated } });
+  };
+
   const updateCurrentUser = () => {
-    showToast("프로필 수정 API가 아직 제공되지 않습니다.", "warning");
+    setFormModal({
+      title: "프로필 수정",
+      fields: [
+        { name: "name", label: "이름", type: "text" },
+        { name: "department", label: "소속", type: "text" },
+        { name: "program", label: "과정", type: "select", options: ["undergrad", "master", "phd", "professor", "other"] },
+        { name: "enrollment_year", label: "입학 연도", type: "text" },
+        { name: "research_topic", label: "연구 주제", type: "textarea" },
+        { name: "phone", label: "연락처", type: "text" },
+        { name: "bio", label: "소개", type: "textarea" },
+        { name: "github_url", label: "GitHub URL", type: "url" },
+        { name: "linkedin_url", label: "LinkedIn URL", type: "url" },
+        { name: "profile_image", label: "프로필 이미지 URL", type: "url" },
+        { name: "is_public", label: "공개 프로필 노출", type: "checkbox" },
+        { name: "preferred_language", label: "언어", type: "select", options: ["ko", "en"] },
+      ],
+      initialValues: {
+        ...currentUser,
+        program: currentUser.program || "other",
+        preferred_language: currentUser.preferred_language || "ko",
+      },
+      submitLabel: "저장",
+      successMessage: "프로필이 수정되었습니다.",
+      onSubmit: async (values) => persistCurrentUser(await updateMyProfile(values)),
+    });
+  };
+
+  const openPasswordChange = () => {
+    setFormModal({
+      title: "비밀번호 변경",
+      fields: [
+        { name: "current_password", label: "현재 비밀번호", type: "password" },
+        { name: "new_password", label: "새 비밀번호", type: "password" },
+        { name: "confirm_password", label: "새 비밀번호 확인", type: "password" },
+      ],
+      initialValues: { current_password: "", new_password: "", confirm_password: "" },
+      submitLabel: "변경",
+      successMessage: "비밀번호가 변경되었습니다.",
+      onSubmit: async (values) => {
+        if (values.new_password !== values.confirm_password) throw new Error("새 비밀번호 확인이 일치하지 않습니다.");
+        await changeMyPassword(values.current_password, values.new_password);
+      },
+    });
   };
 
   const showNotifications = async () => {
@@ -619,6 +747,8 @@ export default function App() {
       let updated;
       if (key === "publications") {
         updated = normalizeResource(key, await updateResource(key, id, { ...item, ...patch }));
+      } else if (key === "notices" && typeof patch.is_pinned === "boolean") {
+        updated = normalizeResource(key, await setNoticePinned(id, patch.is_pinned));
       } else if (key === "purchaseRequests" && ["approved", "rejected"].includes(patch.status)) {
         updated = await reviewPurchase(id, patch.status);
       } else if (key === "purchaseRequests" && ["purchased", "delivered"].includes(patch.status)) {
@@ -627,9 +757,10 @@ export default function App() {
         updated = await reviewLeave(id, patch.status);
       } else if (key === "expenses" && ["approved", "rejected"].includes(patch.status)) {
         updated = await reviewExpense(id, patch.status);
-      } else if (key === "users" && ["approved", "rejected"].includes(patch.account_status)) {
-        const decision = patch.account_status === "approved" ? "approve" : "reject";
-        updated = await reviewPendingUser(id, decision);
+      } else if (key === "users" && patch.role) {
+        updated = await changeUserRole(id, patch.role);
+      } else if (key === "users" && patch.account_status) {
+        updated = await changeUserStatus(id, patch.account_status);
       } else {
         throw new Error("해당 변경을 지원하는 백엔드 API가 없습니다.");
       }
@@ -639,6 +770,7 @@ export default function App() {
         const balance = await getLeaveBalance();
         updateCollection("leaveBalances", [balance]);
       }
+      if (key === "expenses") await refreshBudgetData();
       showToast("상태가 변경되었습니다.");
     } catch (error) {
       showToast(error.message, "error");
@@ -725,9 +857,11 @@ export default function App() {
     downloadFile,
     copyText,
     updateCurrentUser,
+    openPasswordChange,
     handleAttendance,
     updateAttendance,
     openNoticeDetail,
+    openNoticeEdit,
     openPublicationDetail,
     getCredentialPassword,
     copyCredential,

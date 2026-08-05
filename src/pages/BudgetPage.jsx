@@ -3,8 +3,10 @@ import Button from "../components/Button.jsx";
 import DataTable from "../components/DataTable.jsx";
 import SectionHeader from "../components/SectionHeader.jsx";
 import { formatCurrency } from "../utils/format.js";
+import { hasRole } from "../utils/permissions.js";
 
-export default function BudgetPage({ data, actions }) {
+export default function BudgetPage({ data, currentUser, actions }) {
+  const canReview = hasRole(currentUser, "manager");
   const columns = [
     {
       key: "item_name",
@@ -25,15 +27,12 @@ export default function BudgetPage({ data, actions }) {
       header: "작업",
       render: (expense) => (
         <div className="table-actions">
-          <Button size="sm" variant="secondary" onClick={() => actions.updateItem("expenses", expense.id, { status: "approved" })}>
-            지출 승인
-          </Button>
-          <Button size="sm" variant="secondary" onClick={() => actions.updateItem("expenses", expense.id, { status: "rejected" })}>
-            지출 반려
-          </Button>
-          <Button size="sm" variant="secondary" onClick={() => actions.showToast("영수증 첨부 상태가 갱신되었습니다.")}>
-            영수증 첨부
-          </Button>
+          {canReview && expense.status === "pending" ? (
+            <>
+              <Button size="sm" variant="secondary" onClick={() => actions.updateItem("expenses", expense.id, { status: "approved" })}>지출 승인</Button>
+              <Button size="sm" variant="secondary" onClick={() => actions.updateItem("expenses", expense.id, { status: "rejected" })}>지출 반려</Button>
+            </>
+          ) : "-"}
         </div>
       ),
     },
@@ -45,16 +44,11 @@ export default function BudgetPage({ data, actions }) {
         title="Budget"
         description="예산 사용 현황과 지출 승인 상태를 확인합니다."
         actions={
-          <div className="button-row">
-            <Button variant="primary" onClick={() => actions.openCreate("budgets")}>
-              예산 등록
-            </Button>
-            <Button variant="secondary" onClick={() => actions.openCreate("expenses")}>
-              지출 등록
-            </Button>
-          </div>
+          <Button variant="primary" onClick={() => actions.openCreate("expenses")}>지출 등록</Button>
         }
       />
+
+      {!data.budgets.length ? <p className="muted-note">예산 장부 조회 API가 없어 지출 등록 시 budget_id를 직접 입력해야 합니다.</p> : null}
 
       <section className="budget-grid">
         {data.budgets.map((budget) => {

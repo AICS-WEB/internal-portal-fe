@@ -18,7 +18,6 @@ const initialValues = {
   researchTopic: "",
   profileImage: "",
   phone: "",
-  gender: "",
   githubUrl: "",
   linkedinUrl: "",
 };
@@ -57,7 +56,6 @@ export default function RegisterPage({ onBack }) {
     if (!Number.isInteger(enrollmentYear)) nextErrors.enrollmentYear = "올바른 입학년도를 입력해 주세요.";
     if (!values.researchTopic.trim()) nextErrors.researchTopic = "연구 주제를 입력해 주세요.";
     if (!values.phone.trim()) nextErrors.phone = "전화번호를 입력해 주세요.";
-    if (!values.gender) nextErrors.gender = "성별을 선택해 주세요.";
 
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
@@ -82,7 +80,7 @@ export default function RegisterPage({ onBack }) {
         researchTopic: values.researchTopic.trim(),
         profileImage: values.profileImage.trim() || null,
         phone: values.phone.trim(),
-        bio: values.gender,
+        bio: null,
         githubUrl: values.githubUrl.trim() || null,
         linkedinUrl: values.linkedinUrl.trim() || null,
       });
@@ -209,14 +207,6 @@ export default function RegisterPage({ onBack }) {
                   <input type="number" min="1990" max={currentYear + 1} value={values.enrollmentYear} onChange={(event) => updateValue("enrollmentYear", event.target.value)} aria-invalid={Boolean(errors.enrollmentYear)} />
                   <FieldError message={errors.enrollmentYear} />
                 </label>
-                <div className="register-choice-field register-span-2">
-                  <span>성별 *</span>
-                  <div className="register-radio-group">
-                    <label><input type="radio" name="gender" value="male" checked={values.gender === "male"} onChange={(event) => updateValue("gender", event.target.value)} /><span>남성</span></label>
-                    <label><input type="radio" name="gender" value="female" checked={values.gender === "female"} onChange={(event) => updateValue("gender", event.target.value)} /><span>여성</span></label>
-                  </div>
-                  <FieldError message={errors.gender} />
-                </div>
               </div>
             </fieldset>
 

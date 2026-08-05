@@ -6,6 +6,7 @@ import FilterTabs from "../components/FilterTabs.jsx";
 import Pagination from "../components/Pagination.jsx";
 import SearchInput from "../components/SearchInput.jsx";
 import SectionHeader from "../components/SectionHeader.jsx";
+import { hasRole } from "../utils/permissions.js";
 
 const categoryOptions = [
   { value: "all", label: "전체" },
@@ -15,7 +16,7 @@ const categoryOptions = [
   { value: "schedule", label: "일정" },
 ];
 
-export default function NoticesPage({ data, actions, globalSearch }) {
+export default function NoticesPage({ data, currentUser, actions, globalSearch }) {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
   const [sort, setSort] = useState("latest");
@@ -61,17 +62,8 @@ export default function NoticesPage({ data, actions, globalSearch }) {
       header: "작업",
       render: (notice) => (
         <div className="table-actions">
-          <Button size="sm" variant="secondary" onClick={() => actions.openDetail("공지 상세", notice)}>
+          <Button size="sm" variant="secondary" onClick={() => actions.openNoticeDetail(notice)}>
             상세 보기
-          </Button>
-          <Button size="sm" variant="secondary" onClick={() => actions.openEdit("notices", notice)}>
-            수정
-          </Button>
-          <Button size="sm" variant="secondary" onClick={() => actions.updateItem("notices", notice.id, { is_pinned: !notice.is_pinned })}>
-            고정 토글
-          </Button>
-          <Button size="sm" variant="danger" onClick={() => actions.deleteItem("notices", notice.id, "공지사항")}>
-            삭제
           </Button>
         </div>
       ),
@@ -83,11 +75,11 @@ export default function NoticesPage({ data, actions, globalSearch }) {
       <SectionHeader
         title="공지사항"
         description="연구실 공지, 계정 안내, 일정 안내를 한 곳에서 관리합니다."
-        actions={
+        actions={hasRole(currentUser, "manager") ? (
           <Button variant="primary" onClick={() => actions.openCreate("notices")}>
             공지 등록
           </Button>
-        }
+        ) : null}
       />
 
       <section className="toolbar-panel">

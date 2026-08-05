@@ -1,4 +1,5 @@
 import BrandMark from "./BrandMark.jsx";
+import { hasRole } from "../utils/permissions.js";
 
 const menuItems = [
   { id: "dashboard", label: "Dashboard" },
@@ -12,7 +13,7 @@ const menuItems = [
   { id: "purchases", label: "Purchases" },
   { id: "budget", label: "Budget" },
   { id: "credentials", label: "Credentials" },
-  { id: "admin", label: "Admin" },
+  { id: "admin", label: "Admin", minRole: "manager" },
   { id: "mypage", label: "My Page" },
 ];
 
@@ -29,7 +30,7 @@ export default function Sidebar({ activePage, onNavigate, isOpen, onClose, curre
         </div>
 
         <nav className="sidebar-nav" aria-label="주 메뉴">
-          {menuItems.map((item) => (
+          {menuItems.filter((item) => !item.minRole || hasRole(currentUser, item.minRole)).map((item) => (
             <button
               key={item.id}
               type="button"

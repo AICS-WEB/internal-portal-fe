@@ -44,7 +44,7 @@ export default function CalendarPage({ data, actions }) {
             <Button variant="primary" onClick={() => actions.openCreate("calendarEvents")}>
               일정 등록
             </Button>
-            <Button variant="secondary" onClick={() => actions.openCreate("calendarEvents", { is_recurring: true, recurrence_rule: "매주" })}>
+            <Button variant="secondary" onClick={() => actions.openCreate("calendarEvents", { is_recurring: true, recurrence_rule: "FREQ=WEEKLY" })}>
               반복 일정 등록
             </Button>
           </div>

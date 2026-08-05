@@ -7,6 +7,15 @@ import SectionHeader from "../components/SectionHeader.jsx";
 export default function CredentialsPage({ data, actions }) {
   const [revealed, setRevealed] = useState({});
 
+  const togglePassword = async (credential) => {
+    if (revealed[credential.id]) {
+      setRevealed((current) => ({ ...current, [credential.id]: null }));
+      return;
+    }
+    const password = await actions.getCredentialPassword(credential);
+    if (password) setRevealed((current) => ({ ...current, [credential.id]: password }));
+  };
+
   const columns = [
     {
       key: "title",
@@ -23,7 +32,7 @@ export default function CredentialsPage({ data, actions }) {
     {
       key: "password",
       header: "비밀번호",
-      render: (credential) => (revealed[credential.id] ? credential.password : "••••••••••••"),
+      render: (credential) => revealed[credential.id] || "••••••••••••",
     },
     { key: "min_role", header: "권한", render: (credential) => <Badge value={credential.min_role} /> },
     {
@@ -37,14 +46,11 @@ export default function CredentialsPage({ data, actions }) {
               size="sm"
               variant="secondary"
               disabled={!allowed}
-              onClick={() => {
-                setRevealed((current) => ({ ...current, [credential.id]: !current[credential.id] }));
-                actions.showToast("접근 로그가 기록되었습니다.");
-              }}
+              onClick={() => togglePassword(credential)}
             >
-              비밀번호 보기
+              {revealed[credential.id] ? "비밀번호 숨기기" : "비밀번호 보기"}
             </Button>
-            <Button size="sm" variant="secondary" disabled={!allowed} onClick={() => actions.copyText(credential.password, "접근 로그가 기록되었습니다. 비밀번호가 복사되었습니다.")}>
+            <Button size="sm" variant="secondary" disabled={!allowed} onClick={() => actions.copyCredential(credential)}>
               복사
             </Button>
             <Button size="sm" variant="secondary" onClick={() => actions.openEdit("sharedCredentials", credential)}>

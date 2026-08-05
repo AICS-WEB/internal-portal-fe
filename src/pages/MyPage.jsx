@@ -1,48 +1,7 @@
 import Badge from "../components/Badge.jsx";
-import Button from "../components/Button.jsx";
 import SectionHeader from "../components/SectionHeader.jsx";
 
-export default function MyPage({ currentUser, actions }) {
-  const profileFields = [
-    { name: "name", label: "name", type: "text" },
-    { name: "email", label: "email", type: "email" },
-    { name: "student_id", label: "student_id", type: "text" },
-    { name: "department", label: "department", type: "text" },
-    { name: "program", label: "program", type: "text" },
-    { name: "enrollment_year", label: "enrollment_year", type: "text" },
-    { name: "research_topic", label: "research_topic", type: "text" },
-    { name: "bio", label: "bio", type: "textarea" },
-    { name: "github_url", label: "github_url", type: "url" },
-    { name: "linkedin_url", label: "linkedin_url", type: "url" },
-    { name: "phone", label: "phone", type: "tel" },
-  ];
-
-  const openProfileEdit = () => {
-    actions.openForm({
-      title: "프로필 수정",
-      fields: profileFields,
-      initialValues: currentUser,
-      submitLabel: "저장",
-      successMessage: "프로필이 수정되었습니다.",
-      onSubmit: (values) => actions.updateCurrentUser(values),
-    });
-  };
-
-  const openPasswordChange = () => {
-    actions.openForm({
-      title: "비밀번호 변경",
-      fields: [
-        { name: "current_password", label: "current_password", type: "password" },
-        { name: "new_password", label: "new_password", type: "password" },
-        { name: "confirm_password", label: "confirm_password", type: "password" },
-      ],
-      initialValues: {},
-      submitLabel: "변경",
-      successMessage: "비밀번호 변경 요청이 저장되었습니다.",
-      onSubmit: () => {},
-    });
-  };
-
+export default function MyPage({ currentUser }) {
   return (
     <div className="page-stack">
       <SectionHeader title="My Page" description="내 프로필과 공개 여부를 관리합니다." />
@@ -57,30 +16,10 @@ export default function MyPage({ currentUser, actions }) {
             <Badge value={currentUser.account_status} />
             <Badge value={currentUser.is_public ? "public" : "private"} />
           </div>
-          <div className="button-row center">
-            <Button variant="primary" onClick={openProfileEdit}>
-              프로필 수정
-            </Button>
-            <Button variant="secondary" onClick={openPasswordChange}>
-              비밀번호 변경
-            </Button>
-          </div>
         </article>
 
         <article className="panel">
-          <SectionHeader
-            title="프로필 정보"
-            actions={
-              <label className="toggle-row">
-                <input
-                  type="checkbox"
-                  checked={currentUser.is_public}
-                  onChange={(event) => actions.updateCurrentUser({ is_public: event.target.checked })}
-                />
-                공개 프로필
-              </label>
-            }
-          />
+          <SectionHeader title="프로필 정보" />
           <dl className="detail-grid">
             <div>
               <dt>student_id</dt>
@@ -117,6 +56,7 @@ export default function MyPage({ currentUser, actions }) {
           </dl>
           <p className="muted-note">phone은 연구실 내부 연락을 위한 전용 정보입니다.</p>
           <p className="profile-bio">{currentUser.bio}</p>
+          <p className="muted-note">프로필 수정과 비밀번호 변경은 대응 백엔드 API가 추가되면 활성화됩니다.</p>
         </article>
       </section>
     </div>

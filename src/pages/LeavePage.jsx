@@ -5,6 +5,7 @@ import DataTable from "../components/DataTable.jsx";
 import FilterTabs from "../components/FilterTabs.jsx";
 import SectionHeader from "../components/SectionHeader.jsx";
 import StatCard from "../components/StatCard.jsx";
+import { hasRole } from "../utils/permissions.js";
 
 const statusOptions = [
   { value: "all", label: "전체" },
@@ -15,6 +16,7 @@ const statusOptions = [
 
 export default function LeavePage({ data, currentUser, actions }) {
   const [status, setStatus] = useState("all");
+  const canReview = hasRole(currentUser, "manager");
   const balance = data.leaveBalances.find((item) => item.user_id === currentUser.id) || data.leaveBalances[0];
 
   const rows = useMemo(() => {
@@ -33,18 +35,16 @@ export default function LeavePage({ data, currentUser, actions }) {
       header: "작업",
       render: (request) => (
         <div className="table-actions">
-          <Button size="sm" variant="secondary" onClick={() => actions.openEdit("leaveRequests", request)}>
-            신청 수정
-          </Button>
-          <Button size="sm" variant="secondary" onClick={() => actions.updateItem("leaveRequests", request.id, { status: "approved" })}>
-            승인
-          </Button>
-          <Button size="sm" variant="secondary" onClick={() => actions.updateItem("leaveRequests", request.id, { status: "rejected" })}>
-            반려
-          </Button>
-          <Button size="sm" variant="danger" onClick={() => actions.deleteItem("leaveRequests", request.id, "휴가 신청")}>
-            신청 취소
-          </Button>
+          {canReview && request.status === "pending" ? (
+            <>
+              <Button size="sm" variant="secondary" onClick={() => actions.updateItem("leaveRequests", request.id, { status: "approved" })}>
+                승인
+              </Button>
+              <Button size="sm" variant="secondary" onClick={() => actions.updateItem("leaveRequests", request.id, { status: "rejected" })}>
+                반려
+              </Button>
+            </>
+          ) : "-"}
         </div>
       ),
     },
@@ -71,6 +71,8 @@ export default function LeavePage({ data, currentUser, actions }) {
       <section className="toolbar-panel">
         <FilterTabs options={statusOptions} value={status} onChange={setStatus} />
       </section>
+
+      <p className="muted-note">휴가 신청 목록 조회 API가 없어 현재 세션에서 새로 신청한 항목만 표시됩니다.</p>
 
       <DataTable columns={columns} rows={rows} />
     </div>

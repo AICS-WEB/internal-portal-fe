@@ -5,6 +5,7 @@ import DataTable from "../components/DataTable.jsx";
 import FilterTabs from "../components/FilterTabs.jsx";
 import SectionHeader from "../components/SectionHeader.jsx";
 import { formatCurrency } from "../utils/format.js";
+import { hasRole } from "../utils/permissions.js";
 
 const statusOptions = [
   { value: "all", label: "전체" },
@@ -15,8 +16,9 @@ const statusOptions = [
   { value: "delivered", label: "입고 완료" },
 ];
 
-export default function PurchasesPage({ data, actions }) {
+export default function PurchasesPage({ data, currentUser, actions }) {
   const [status, setStatus] = useState("all");
+  const canReview = hasRole(currentUser, "manager");
 
   const rows = useMemo(() => {
     return data.purchaseRequests.filter((item) => status === "all" || item.status === status);
@@ -42,21 +44,19 @@ export default function PurchasesPage({ data, actions }) {
       header: "작업",
       render: (item) => (
         <div className="table-actions">
-          <Button size="sm" variant="secondary" onClick={() => actions.openEdit("purchaseRequests", item)}>
-            수정
-          </Button>
-          <Button size="sm" variant="secondary" onClick={() => actions.updateItem("purchaseRequests", item.id, { status: "approved" })}>
-            승인
-          </Button>
-          <Button size="sm" variant="secondary" onClick={() => actions.updateItem("purchaseRequests", item.id, { status: "rejected" })}>
-            반려
-          </Button>
-          <Button size="sm" variant="secondary" onClick={() => actions.updateItem("purchaseRequests", item.id, { status: "purchased" })}>
-            구매 완료 처리
-          </Button>
-          <Button size="sm" variant="secondary" onClick={() => actions.updateItem("purchaseRequests", item.id, { status: "delivered" })}>
-            입고 완료 처리
-          </Button>
+          {canReview && item.status === "pending" ? (
+            <>
+              <Button size="sm" variant="secondary" onClick={() => actions.updateItem("purchaseRequests", item.id, { status: "approved" })}>승인</Button>
+              <Button size="sm" variant="secondary" onClick={() => actions.updateItem("purchaseRequests", item.id, { status: "rejected" })}>반려</Button>
+            </>
+          ) : null}
+          {canReview && item.status === "approved" ? (
+            <Button size="sm" variant="secondary" onClick={() => actions.updateItem("purchaseRequests", item.id, { status: "purchased" })}>구매 완료 처리</Button>
+          ) : null}
+          {canReview && item.status === "purchased" ? (
+            <Button size="sm" variant="secondary" onClick={() => actions.updateItem("purchaseRequests", item.id, { status: "delivered" })}>입고 완료 처리</Button>
+          ) : null}
+          {!canReview || ["rejected", "delivered"].includes(item.status) ? "-" : null}
         </div>
       ),
     },

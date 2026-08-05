@@ -25,6 +25,7 @@ const payloadMappers = {
     venue: value.venue || null,
     doi: value.doi || null,
     isPublic: Boolean(value.is_public),
+    ...(Array.isArray(value.attachments) ? { attachments: value.attachments } : {}),
     ...(Array.isArray(value.author_user_ids)
       ? {
           authors: value.author_user_ids.map((userId, index) => ({
@@ -223,6 +224,17 @@ export async function setNoticePinned(id, isPinned) {
 
 export async function getPublication(id) {
   return apiRequest(`/publications/${id}`);
+}
+
+export async function addPublicationAttachment(publicationId, attachment) {
+  return apiRequest(`/publications/${publicationId}/attachments`, {
+    method: "POST",
+    body: attachment,
+  });
+}
+
+export async function deletePublicationAttachment(publicationId, attachmentId) {
+  return apiRequest(`/publications/${publicationId}/attachments/${attachmentId}`, { method: "DELETE" });
 }
 
 export async function createPurchase(value) {

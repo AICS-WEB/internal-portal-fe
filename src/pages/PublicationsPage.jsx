@@ -57,6 +57,9 @@ export default function PublicationsPage({ data, actions }) {
           <Button size="sm" variant="secondary" onClick={() => actions.openPublicationDetail(item)}>
             상세 보기
           </Button>
+          <Button size="sm" variant="secondary" onClick={() => actions.openPublicationFiles(item)}>
+            파일 관리
+          </Button>
           <Button size="sm" variant="danger" onClick={() => actions.deleteItem("publications", item.id, "논문")}>
             논문 삭제
           </Button>

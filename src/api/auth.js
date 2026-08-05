@@ -20,6 +20,18 @@ export async function loginUser({ email, password }) {
   }
 }
 
+export async function requestPasswordReset(email) {
+  try {
+    return await apiRequest("/auth/password/reset-request", {
+      method: "POST",
+      body: { email },
+      auth: false,
+    });
+  } catch (error) {
+    throw new Error(error.message || "비밀번호 재설정 메일을 요청하지 못했습니다.");
+  }
+}
+
 export async function logoutUser(refreshToken) {
   if (!refreshToken) return;
   await apiRequest("/auth/logout", { method: "POST", body: { refreshToken }, auth: false });

@@ -1443,6 +1443,16 @@ button:disabled {
   font-weight: 760;
 }
 
+.reset-submit-success {
+  border: 1px solid #bbf7d0;
+  border-radius: var(--card-radius);
+  background: var(--success-soft);
+  color: #15803d;
+  padding: 12px 14px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
 .field-label-row {
   display: flex;
   align-items: center;
@@ -1644,6 +1654,77 @@ button:disabled {
   color: #374151;
   padding-left: 20px;
   font-size: 12px;
+}
+
+.publication-file-upload {
+  display: grid;
+  gap: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--card-radius);
+  background: var(--surface-subtle);
+  padding: 14px;
+}
+
+.publication-file-upload input[type="file"] {
+  padding: 6px;
+}
+
+.publication-file-upload-actions,
+.publication-attachment-heading,
+.publication-attachment-list li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.publication-file-upload-actions {
+  justify-content: flex-end;
+}
+
+.publication-attachment-section {
+  display: grid;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.publication-attachment-heading span,
+.publication-attachment-list span,
+.publication-attachment-empty {
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.publication-attachment-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.publication-attachment-list li {
+  border: 1px solid var(--border);
+  border-radius: var(--card-radius);
+  padding: 12px;
+}
+
+.publication-attachment-list li > div:first-child {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.publication-attachment-list li strong {
+  overflow-wrap: anywhere;
+}
+
+.publication-attachment-empty {
+  margin: 0;
+  border: 1px dashed var(--border);
+  border-radius: var(--card-radius);
+  padding: 18px;
+  text-align: center;
 }
 
 .multi-select-field {

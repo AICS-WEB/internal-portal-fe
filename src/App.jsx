@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { clearAuthSession, logoutUser, readAuthSession, saveAuthSession } from "./api/auth.js";
 import {
+  addPublicationAttachment,
   advancePurchase,
   changeMyPassword,
   changeUserRole,
@@ -13,6 +14,7 @@ import {
   createNotification,
   createPurchase,
   createResource,
+  deletePublicationAttachment,
   deleteResource,
   getFileDownload,
   getBudgets,
@@ -44,6 +46,7 @@ import ConfirmModal from "./components/ConfirmModal.jsx";
 import Header from "./components/Header.jsx";
 import Modal from "./components/Modal.jsx";
 import NotificationCenterModal from "./components/NotificationCenterModal.jsx";
+import PublicationFilesModal from "./components/PublicationFilesModal.jsx";
 import Sidebar from "./components/Sidebar.jsx";
 import Toast from "./components/Toast.jsx";
 import AttendancePage from "./pages/AttendancePage.jsx";
@@ -239,7 +242,7 @@ function buildResourceConfigs(currentUser, data) {
           label: "논문 첨부파일",
           type: "file",
           multiple: true,
-          help: "원문·증빙 파일 업로드 UI입니다. 저장소 API 연결 후 활성화됩니다.",
+          help: "원문·증빙 파일을 Supabase Storage에 업로드하고 논문 첨부로 등록합니다.",
         },
         { name: "is_public", label: "is_public", type: "checkbox" },
       ],
@@ -375,7 +378,8 @@ function normalizeValues(fields, values) {
 
 async function prepareResourceValues(key, values) {
   if (key === "publications" && values.attachment_files?.length) {
-    throw new Error("논문 첨부파일 저장 API가 아직 제공되지 않습니다. 첨부 선택을 해제해 주세요.");
+    const attachments = await Promise.all(values.attachment_files.map((item) => uploadFileToStorage(item.file, "publications")));
+    return { ...values, attachments };
   }
   if (key === "notices" && values.attachment_files?.length) {
     const attachments = await Promise.all(values.attachment_files.map((item) => uploadFileToStorage(item.file, "notices")));
@@ -578,6 +582,9 @@ export default function App() {
   const [formModal, setFormModal] = useState(null);
   const [detailModal, setDetailModal] = useState(null);
   const [confirmModal, setConfirmModal] = useState(null);
+  const [publicationFilesModal, setPublicationFilesModal] = useState(null);
+  const [publicationFilesUploading, setPublicationFilesUploading] = useState(false);
+  const [deletingPublicationAttachmentId, setDeletingPublicationAttachmentId] = useState(null);
   const [notificationCenterOpen, setNotificationCenterOpen] = useState(false);
   const [toast, setToast] = useState(null);
 
@@ -720,7 +727,17 @@ export default function App() {
       successMessage: `${config.editTitle}이 완료되었습니다.`,
       onSubmit: async (values) => {
         const preparedValues = await prepareResourceValues(key, values);
-        const updated = normalizeResource(key, await updateResource(key, item.id, preparedValues));
+        const attachmentDrafts = key === "publications" ? preparedValues.attachments || [] : [];
+        const updateValues = key === "publications"
+          ? Object.fromEntries(Object.entries(preparedValues).filter(([name]) => name !== "attachments" && name !== "attachment_files"))
+          : preparedValues;
+        const updated = normalizeResource(key, await updateResource(key, item.id, updateValues));
+        if (key === "publications" && attachmentDrafts.length) {
+          const attachments = await Promise.all(
+            attachmentDrafts.map((attachment) => addPublicationAttachment(item.id, attachment)),
+          );
+          updated.attachments = [...(item.attachments || []), ...attachments];
+        }
         if (key === "budgets") updated.used_amount = item.used_amount;
         replaceItem(key, item.id, updated);
       },
@@ -1010,6 +1027,76 @@ export default function App() {
     }
   };
 
+  const openPublicationFiles = async (publication) => {
+    try {
+      const detail = normalizeResource("publications", await getPublication(publication.id));
+      setPublicationFilesModal(detail);
+      replaceItem("publications", publication.id, { attachments: detail.attachments || [] });
+    } catch (error) {
+      showToast(error.message, "error");
+    }
+  };
+
+  const uploadPublicationFiles = async (files) => {
+    if (!publicationFilesModal || !files.length) return false;
+    const publicationId = publicationFilesModal.id;
+    setPublicationFilesUploading(true);
+    try {
+      const uploadedFiles = await Promise.all(files.map((file) => uploadFileToStorage(file, "publications")));
+      const attachments = await Promise.all(
+        uploadedFiles.map((attachment) => addPublicationAttachment(publicationId, attachment)),
+      );
+      setPublicationFilesModal((current) => current && Number(current.id) === Number(publicationId)
+        ? { ...current, attachments: [...(current.attachments || []), ...attachments] }
+        : current);
+      updateCollection("publications", (items) => items.map((item) => Number(item.id) === Number(publicationId)
+        ? { ...item, attachments: [...(item.attachments || []), ...attachments] }
+        : item));
+      showToast(`${attachments.length}개 논문 파일을 등록했습니다.`);
+      return true;
+    } catch (error) {
+      try {
+        const refreshed = normalizeResource("publications", await getPublication(publicationId));
+        setPublicationFilesModal((current) => current && Number(current.id) === Number(publicationId) ? refreshed : current);
+        replaceItem("publications", publicationId, { attachments: refreshed.attachments || [] });
+      } catch {
+        // 일부 파일만 등록된 경우에도 원래 오류 메시지를 우선 안내합니다.
+      }
+      showToast(error.message, "error");
+      return false;
+    } finally {
+      setPublicationFilesUploading(false);
+    }
+  };
+
+  const confirmPublicationAttachmentDelete = (attachment) => {
+    if (!publicationFilesModal) return;
+    const publicationId = publicationFilesModal.id;
+    setConfirmModal({
+      title: "논문 파일 삭제",
+      message: `${attachment.filename} 파일을 논문 첨부 목록에서 삭제할까요?`,
+      confirmLabel: "파일 삭제",
+      onConfirm: async () => {
+        setDeletingPublicationAttachmentId(attachment.id);
+        try {
+          await deletePublicationAttachment(publicationId, attachment.id);
+          setPublicationFilesModal((current) => current && Number(current.id) === Number(publicationId)
+            ? { ...current, attachments: (current.attachments || []).filter((item) => Number(item.id) !== Number(attachment.id)) }
+            : current);
+          updateCollection("publications", (items) => items.map((item) => Number(item.id) === Number(publicationId)
+            ? { ...item, attachments: (item.attachments || []).filter((file) => Number(file.id) !== Number(attachment.id)) }
+            : item));
+          setConfirmModal(null);
+          showToast("논문 파일을 삭제했습니다.");
+        } catch (error) {
+          showToast(error.message, "error");
+        } finally {
+          setDeletingPublicationAttachmentId(null);
+        }
+      },
+    });
+  };
+
   const getCredentialPassword = async (credential) => {
     try {
       const revealed = await revealCredential(credential.id);
@@ -1053,6 +1140,7 @@ export default function App() {
     openNoticeDetail,
     openNoticeEdit,
     openPublicationDetail,
+    openPublicationFiles,
     getCredentialPassword,
     copyCredential,
     canAccess: (item) => canAccess(currentUser, item),
@@ -1132,6 +1220,16 @@ export default function App() {
 
       {formModal ? <FormModal modal={formModal} onClose={() => setFormModal(null)} onSubmit={submitForm} submitting={formSubmitting} /> : null}
       {detailModal ? <DetailModal detail={detailModal} onClose={() => setDetailModal(null)} /> : null}
+      {publicationFilesModal ? (
+        <PublicationFilesModal
+          publication={publicationFilesModal}
+          uploading={publicationFilesUploading}
+          deletingId={deletingPublicationAttachmentId}
+          onClose={() => setPublicationFilesModal(null)}
+          onUpload={uploadPublicationFiles}
+          onDelete={confirmPublicationAttachmentDelete}
+        />
+      ) : null}
       {notificationCenterOpen ? (
         <NotificationCenterModal
           notifications={data.notifications}

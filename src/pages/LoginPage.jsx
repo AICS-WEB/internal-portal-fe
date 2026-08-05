@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { loginUser } from "../api/auth.js";
+import { loginUser, requestPasswordReset } from "../api/auth.js";
 import BrandMark from "../components/BrandMark.jsx";
 import Button from "../components/Button.jsx";
 
@@ -10,6 +10,9 @@ export default function LoginPage({ onLogin, onRegister }) {
   const [submitting, setSubmitting] = useState(false);
   const [resetMode, setResetMode] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
+  const [resetError, setResetError] = useState("");
+  const [resetSent, setResetSent] = useState(false);
+  const [resetSubmitting, setResetSubmitting] = useState(false);
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -30,6 +33,33 @@ export default function LoginPage({ onLogin, onRegister }) {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handleResetRequest = async (event) => {
+    event.preventDefault();
+    const normalizedEmail = resetEmail.trim();
+    if (!normalizedEmail) {
+      setResetError("가입한 이메일을 입력해 주세요.");
+      return;
+    }
+
+    setResetSubmitting(true);
+    setResetError("");
+    setResetSent(false);
+    try {
+      await requestPasswordReset(normalizedEmail);
+      setResetSent(true);
+    } catch (resetRequestError) {
+      setResetError(resetRequestError.message);
+    } finally {
+      setResetSubmitting(false);
+    }
+  };
+
+  const closeResetMode = () => {
+    setResetMode(false);
+    setResetError("");
+    setResetSent(false);
   };
 
   return (
@@ -63,25 +93,32 @@ export default function LoginPage({ onLogin, onRegister }) {
           </div>
 
           {resetMode ? (
-            <form className="login-form" onSubmit={(event) => event.preventDefault()}>
+            <form className="login-form" onSubmit={handleResetRequest}>
               <label className="field">
                 <span>가입 이메일</span>
                 <input
                   type="email"
                   autoComplete="email"
                   value={resetEmail}
-                  onChange={(event) => setResetEmail(event.target.value)}
+                  onChange={(event) => {
+                    setResetEmail(event.target.value);
+                    setResetError("");
+                    setResetSent(false);
+                  }}
                   placeholder="name@sch.ac.kr"
                   autoFocus
                 />
               </label>
-              <div className="feature-pending-note">
-                재설정 메일 발송 화면이 준비되었습니다. API 연결 후 발송 버튼이 활성화됩니다.
-              </div>
-              <Button type="submit" variant="primary" className="login-submit" disabled>
-                재설정 메일 발송
+              {resetSent ? (
+                <div className="reset-submit-success" role="status">
+                  입력한 이메일로 재설정 안내를 발송했습니다. 받은편지함과 스팸함을 확인해 주세요.
+                </div>
+              ) : null}
+              {resetError ? <div className="register-submit-error" role="alert">{resetError}</div> : null}
+              <Button type="submit" variant="primary" className="login-submit" disabled={resetSubmitting}>
+                {resetSubmitting ? "발송 중..." : "재설정 메일 발송"}
               </Button>
-              <Button variant="ghost" onClick={() => setResetMode(false)}>로그인으로 돌아가기</Button>
+              <Button variant="ghost" onClick={closeResetMode} disabled={resetSubmitting}>로그인으로 돌아가기</Button>
             </form>
           ) : (
           <form className="login-form" onSubmit={handleSubmit}>
@@ -102,7 +139,15 @@ export default function LoginPage({ onLogin, onRegister }) {
             <label className="field">
               <span className="field-label-row">
                 <span>비밀번호</span>
-                <button type="button" onClick={() => setResetMode(true)}>비밀번호를 잊으셨나요?</button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setResetEmail(email);
+                    setResetMode(true);
+                  }}
+                >
+                  비밀번호를 잊으셨나요?
+                </button>
               </span>
               <input
                 type="password"

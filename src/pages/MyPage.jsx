@@ -18,7 +18,9 @@ export default function MyPage({ currentUser, actions }) {
 
       <section className="profile-layout">
         <article className="profile-card">
-          <div className="profile-avatar">{currentUser.name?.slice(0, 1) || "-"}</div>
+          <div className="profile-avatar">
+            {currentUser.profile_image ? <img src={currentUser.profile_image} alt={`${currentUser.name} 프로필`} /> : currentUser.name?.slice(0, 1) || "-"}
+          </div>
           <h2>{currentUser.name}</h2>
           <p>{currentUser.email}</p>
           <div className="inline-gap center">

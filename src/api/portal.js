@@ -25,7 +25,15 @@ const payloadMappers = {
     venue: value.venue || null,
     doi: value.doi || null,
     isPublic: Boolean(value.is_public),
-    ...(Array.isArray(value.authors)
+    ...(Array.isArray(value.author_user_ids)
+      ? {
+          authors: value.author_user_ids.map((userId, index) => ({
+            userId: Number(userId),
+            authorOrder: index + 1,
+            isCorresponding: false,
+          })),
+        }
+      : Array.isArray(value.authors)
       ? {
           authors: value.authors.map((author) => ({
             userId: author.userId ?? author.user_id,
@@ -74,6 +82,7 @@ const payloadMappers = {
     itemName: value.item_name,
     amount: Number(value.amount),
     date: value.date,
+    ...(value.receipt ? { receipt: value.receipt } : {}),
   }),
   budgets: (value) => ({
     name: value.name,
@@ -101,7 +110,7 @@ const payloadMappers = {
     content: value.content,
     category: value.category,
     isPinned: Boolean(value.is_pinned),
-    attachments: [],
+    attachments: Array.isArray(value.attachments) ? value.attachments : [],
   }),
 };
 
@@ -196,7 +205,11 @@ export async function deleteResource(resource, id) {
 
 export async function createNotice(value) {
   const data = await apiRequest("/notices", { method: "POST", body: toApiPayload("notices", value) });
-  return data.notice;
+  return {
+    ...data.notice,
+    attachments: data.attachments || [],
+    attachment_count: data.attachments?.length || 0,
+  };
 }
 
 export async function getNotice(id) {
@@ -379,6 +392,38 @@ export async function createNotification(value) {
       message: value.message,
     },
   }));
+}
+
+export async function uploadFileToStorage(file, folder = "misc") {
+  if (!file) throw new Error("업로드할 파일을 찾을 수 없습니다.");
+  const signed = await apiRequest("/uploads/sign", {
+    method: "POST",
+    body: { filename: file.name, folder },
+  });
+
+  let response;
+  try {
+    response = await fetch(signed.uploadUrl, {
+      method: "PUT",
+      headers: { "Content-Type": file.type || "application/octet-stream" },
+      body: file,
+    });
+  } catch {
+    throw new Error("스토리지에 파일을 업로드하지 못했습니다.");
+  }
+  if (!response.ok) {
+    const message = await response.text().catch(() => "");
+    throw new Error(message || `스토리지 업로드에 실패했습니다. (${response.status})`);
+  }
+
+  return {
+    filename: file.name,
+    mimeType: file.type || null,
+    filesize: file.size,
+    storageType: "drive",
+    fileUrl: signed.publicUrl,
+    path: signed.path,
+  };
 }
 
 export async function markAllNotificationsRead() {

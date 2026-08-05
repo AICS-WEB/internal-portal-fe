@@ -37,6 +37,7 @@ import {
   splitCalendarRecurrence,
   updateResource,
   updateMyProfile,
+  uploadFileToStorage,
 } from "./api/portal.js";
 import Button from "./components/Button.jsx";
 import ConfirmModal from "./components/ConfirmModal.jsx";
@@ -130,7 +131,7 @@ function buildResourceConfigs(currentUser, data) {
           label: "첨부파일",
           type: "file",
           multiple: true,
-          help: "업로드 API 연결 전에는 첨부 없이 공지를 저장해 주세요.",
+          help: "선택한 파일은 Supabase Storage에 업로드된 뒤 공지 첨부로 저장됩니다.",
         },
         { name: "is_pinned", label: "is_pinned", type: "checkbox" },
       ],
@@ -214,7 +215,7 @@ function buildResourceConfigs(currentUser, data) {
     publications: {
       createTitle: "논문 등록",
       editTitle: "논문 수정",
-      defaults: { year: String(new Date().getFullYear()), pub_type: "intl_conf", status: "writing", is_public: false },
+      defaults: { year: String(new Date().getFullYear()), pub_type: "intl_conf", status: "writing", is_public: false, author_user_ids: [] },
       fields: [
         { name: "title", label: "title", type: "text" },
         { name: "authors_text", label: "authors_text", type: "text" },
@@ -225,7 +226,7 @@ function buildResourceConfigs(currentUser, data) {
           options: data.users
             .filter((user) => user.account_status === "approved")
             .map((user) => option(user.id, `${user.name} · ${user.email}`)),
-          help: "저자 순서·교신저자 API 연결 후 저장됩니다.",
+          help: "선택한 순서대로 내부 저자가 연결됩니다.",
         },
         { name: "year", label: "year", type: "text" },
         { name: "published_date", label: "published_date", type: "date" },
@@ -249,6 +250,13 @@ function buildResourceConfigs(currentUser, data) {
       editTitle: "버전 업데이트",
       defaults: { category: "template", min_role: "member" },
       fields: [
+        {
+          name: "shared_file",
+          label: "업로드 파일",
+          type: "file",
+          multiple: false,
+          help: "파일을 선택하면 Supabase Storage 업로드 후 아래 파일 정보가 자동으로 채워집니다.",
+        },
         { name: "title", label: "title", type: "text" },
         { name: "description", label: "description", type: "textarea" },
         { name: "category", label: "category", type: "select", options: ["paper", "presentation", "template", "software", "other"] },
@@ -327,7 +335,7 @@ function buildResourceConfigs(currentUser, data) {
           type: "file",
           multiple: false,
           accept: "image/*,.pdf",
-          help: "이미지 또는 PDF 영수증 UI입니다. 저장소 API 연결 전에는 첨부 없이 등록해 주세요.",
+          help: "선택한 이미지 또는 PDF가 업로드된 뒤 지출 영수증으로 저장됩니다.",
         },
       ],
       create: (values) => ({ id: uid("expense"), ...values, status: "pending", receipt: "" }),
@@ -365,10 +373,29 @@ function normalizeValues(fields, values) {
   );
 }
 
-function hasPendingFeatureData(values) {
-  return ["attachment_files", "receipt_files", "author_user_ids"].some(
-    (key) => Array.isArray(values[key]) && values[key].length > 0,
-  );
+async function prepareResourceValues(key, values) {
+  if (key === "publications" && values.attachment_files?.length) {
+    throw new Error("논문 첨부파일 저장 API가 아직 제공되지 않습니다. 첨부 선택을 해제해 주세요.");
+  }
+  if (key === "notices" && values.attachment_files?.length) {
+    const attachments = await Promise.all(values.attachment_files.map((item) => uploadFileToStorage(item.file, "notices")));
+    return { ...values, attachments };
+  }
+  if (key === "expenses" && values.receipt_files?.length) {
+    const receipt = await uploadFileToStorage(values.receipt_files[0].file, "receipts");
+    return { ...values, receipt };
+  }
+  if (key === "sharedFiles" && values.shared_file?.length) {
+    const uploaded = await uploadFileToStorage(values.shared_file[0].file, "misc");
+    return {
+      ...values,
+      filename: uploaded.filename,
+      mime_type: uploaded.mimeType,
+      file_url: uploaded.fileUrl,
+      filesize: uploaded.filesize,
+    };
+  }
+  return values;
 }
 
 function FormModal({ modal, onClose, onSubmit, submitting = false }) {
@@ -435,6 +462,7 @@ function FormModal({ modal, onClose, onSubmit, submitting = false }) {
                   multiple={field.multiple}
                   accept={field.accept}
                   onChange={(event) => updateValue(field.name, Array.from(event.target.files || []).map((file) => ({
+                    file,
                     filename: file.name,
                     mime_type: file.type,
                     filesize: file.size,
@@ -653,15 +681,13 @@ export default function App() {
       submitLabel: config.submitCreate || "등록",
       successMessage: `${config.createTitle}이 완료되었습니다.`,
       onSubmit: async (values) => {
-        if (hasPendingFeatureData(values)) {
-          throw new Error("첨부파일·저자 상세 API 연결 전입니다. 준비 중인 항목 선택을 해제한 뒤 저장해 주세요.");
-        }
+        const preparedValues = await prepareResourceValues(key, values);
         let created;
-        if (key === "notices") created = await createNotice(values);
-        else if (key === "leaveRequests") created = await createLeave(values);
-        else if (key === "purchaseRequests") created = await createPurchase(values);
-        else if (key === "expenses") created = await createExpense(values);
-        else created = await createResource(key, values);
+        if (key === "notices") created = await createNotice(preparedValues);
+        else if (key === "leaveRequests") created = await createLeave(preparedValues);
+        else if (key === "purchaseRequests") created = await createPurchase(preparedValues);
+        else if (key === "expenses") created = await createExpense(preparedValues);
+        else created = await createResource(key, preparedValues);
 
         const normalized = normalizeResource(key, {
           ...created,
@@ -682,17 +708,19 @@ export default function App() {
   const openEdit = (key, item) => {
     const config = resourceConfigs[key];
     if (!config) return;
+    const fields = key === "notices" ? config.fields.filter((field) => field.name !== "attachment_files") : config.fields;
+    const initialValues = key === "publications"
+      ? { ...item, author_user_ids: item.authors?.map((author) => author.user_id ?? author.userId) || [] }
+      : item;
     setFormModal({
       title: config.editTitle,
-      fields: config.fields,
-      initialValues: item,
+      fields,
+      initialValues,
       submitLabel: config.submitEdit || "저장",
       successMessage: `${config.editTitle}이 완료되었습니다.`,
       onSubmit: async (values) => {
-        if (hasPendingFeatureData(values)) {
-          throw new Error("첨부파일·저자 상세 API 연결 전입니다. 준비 중인 항목 선택을 해제한 뒤 저장해 주세요.");
-        }
-        const updated = normalizeResource(key, await updateResource(key, item.id, values));
+        const preparedValues = await prepareResourceValues(key, values);
+        const updated = normalizeResource(key, await updateResource(key, item.id, preparedValues));
         if (key === "budgets") updated.used_amount = item.used_amount;
         replaceItem(key, item.id, updated);
       },
@@ -791,6 +819,14 @@ export default function App() {
         { name: "bio", label: "소개", type: "textarea" },
         { name: "github_url", label: "GitHub URL", type: "url" },
         { name: "linkedin_url", label: "LinkedIn URL", type: "url" },
+        {
+          name: "profile_image_file",
+          label: "프로필 이미지 업로드",
+          type: "file",
+          multiple: false,
+          accept: "image/*",
+          help: "이미지를 선택하면 Supabase Storage에 업로드한 뒤 프로필 URL을 갱신합니다.",
+        },
         { name: "profile_image", label: "프로필 이미지 URL", type: "url" },
         { name: "is_public", label: "공개 프로필 노출", type: "checkbox" },
         { name: "preferred_language", label: "언어", type: "select", options: ["ko", "en"] },
@@ -802,7 +838,14 @@ export default function App() {
       },
       submitLabel: "저장",
       successMessage: "프로필이 수정되었습니다.",
-      onSubmit: async (values) => persistCurrentUser(await updateMyProfile(values)),
+      onSubmit: async (values) => {
+        let preparedValues = values;
+        if (values.profile_image_file?.length) {
+          const uploaded = await uploadFileToStorage(values.profile_image_file[0].file, "profiles");
+          preparedValues = { ...values, profile_image: uploaded.fileUrl };
+        }
+        persistCurrentUser(await updateMyProfile(preparedValues));
+      },
     });
   };
 

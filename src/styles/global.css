@@ -83,7 +83,7 @@ button:disabled {
   height: 38px;
   place-items: center;
   border-radius: var(--card-radius);
-  background: var(--primary);
+
   color: #fff;
   font-size: 13px;
   font-weight: 800;

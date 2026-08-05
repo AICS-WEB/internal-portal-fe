@@ -1,3 +1,5 @@
+import BrandMark from "./BrandMark.jsx";
+
 const menuItems = [
   { id: "dashboard", label: "Dashboard" },
   { id: "notices", label: "Notices" },
@@ -19,7 +21,7 @@ export default function Sidebar({ activePage, onNavigate, isOpen, onClose, curre
     <>
       <aside className={`sidebar ${isOpen ? "open" : ""}`}>
         <div className="sidebar-brand">
-          <div className="brand-mark">AI</div>
+          <BrandMark />
           <div>
             <strong>AICS Lab Hub</strong>
             <span>Internal Portal</span>

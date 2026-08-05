@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { registerUser } from "../api/auth.js";
+import BrandMark from "../components/BrandMark.jsx";
 import Button from "../components/Button.jsx";
 
 const currentYear = new Date().getFullYear();
@@ -119,7 +120,7 @@ export default function RegisterPage({ onBack }) {
       <div className="register-layout">
         <aside className="register-intro">
           <button type="button" className="register-brand" onClick={onBack}>
-            <span className="brand-mark">AI</span>
+            <BrandMark />
             <span>
               <strong>AICS Lab Hub</strong>
               <small>Internal Portal</small>
@@ -144,7 +145,7 @@ export default function RegisterPage({ onBack }) {
               <h2>회원가입</h2>
               <p>별표(*)가 표시된 항목은 필수입니다.</p>
             </div>
-            <Button variant="ghost" onClick={onBack}>닫기</Button>
+            <Button variant="ghost" onClick={onBack}>로그인</Button>
           </div>
 
           <form className="register-form" onSubmit={handleSubmit} noValidate>

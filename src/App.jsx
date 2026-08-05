@@ -542,7 +542,7 @@ export default function App() {
   };
 
   const closeRegister = () => {
-    window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
+    window.location.hash = "/login";
     setShowRegister(false);
   };
 

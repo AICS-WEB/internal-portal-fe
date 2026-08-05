@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { loginUser } from "../api/auth.js";
+import BrandMark from "../components/BrandMark.jsx";
 import Button from "../components/Button.jsx";
 
 export default function LoginPage({ onLogin, onRegister }) {
@@ -34,7 +35,7 @@ export default function LoginPage({ onLogin, onRegister }) {
       <section className="auth-panel">
         <div className="auth-visual">
           <div className="auth-brand">
-            <span className="brand-mark">AI</span>
+            <BrandMark />
             <span>
               <strong>AICS Lab Hub</strong>
               <small>Internal Portal</small>

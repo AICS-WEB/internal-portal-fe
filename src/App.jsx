@@ -541,6 +541,11 @@ export default function App() {
           updateCollection(key, (items) => items.filter((item) => item.id !== id));
           setConfirmModal(null);
           showToast(`${label} 데이터가 삭제되었습니다.`);
+          if (key === "leaveRequests") {
+            getLeaveBalance()
+              .then((balance) => updateCollection("leaveBalances", [balance]))
+              .catch(() => showToast("휴가 신청은 삭제되었지만 잔여일 갱신에 실패했습니다.", "warning"));
+          }
         } catch (error) {
           showToast(error.message, "error");
         }

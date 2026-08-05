@@ -89,6 +89,7 @@ const resourcePaths = {
   publications: "/publications",
   sharedFiles: "/files",
   sharedCredentials: "/credentials",
+  leaveRequests: "/leave/requests",
 };
 
 export function toApiPayload(resource, value) {
@@ -312,6 +313,7 @@ export async function loadPortalData(currentUser) {
     sharedCredentials: apiRequest("/credentials"),
     notifications: apiRequest("/notifications").then((items) => items.map(normalizeNotification)),
     leaveBalances: apiRequest("/leave/balance").then((item) => [item]),
+    leaveRequests: apiRequest("/leave/requests").then((items) => items.map((item) => normalizeResource("leaveRequests", item))),
     researchProjects: apiRequest("/public/research-projects", { auth: false }).then((items) => items.map(normalizeProject)),
   };
 
@@ -327,7 +329,6 @@ export async function loadPortalData(currentUser) {
 
   const data = {
     users: currentUser ? [currentUser] : [],
-    leaveRequests: [],
     budgets: [],
     expenses: [],
   };

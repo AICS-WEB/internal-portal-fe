@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import Badge from "../components/Badge.jsx";
 import Button from "../components/Button.jsx";
-import Modal from "../components/Modal.jsx";
+import RecurringEventModal from "../components/RecurringEventModal.jsx";
 import SectionHeader from "../components/SectionHeader.jsx";
 import { formatDate } from "../utils/format.js";
 
@@ -115,55 +115,12 @@ export default function CalendarPage({ data, actions }) {
       </section>
 
       {recurringDraft ? (
-        <Modal
-          title="반복 일정 관리"
-          description={recurringDraft.title}
+        <RecurringEventModal
+          event={recurringDraft}
           onClose={() => setRecurringDraft(null)}
-          maxWidth={760}
-          footer={
-            <>
-              <Button variant="secondary" onClick={() => setRecurringDraft(null)}>닫기</Button>
-              <Button variant="primary" disabled>API 연결 후 저장</Button>
-            </>
-          }
-        >
-          <div className="feature-split-grid">
-            <section className="feature-draft-card">
-              <div className="feature-draft-heading">
-                <div>
-                  <strong>특정 회차 변경</strong>
-                  <span>선택한 한 회차만 수정하거나 취소합니다.</span>
-                </div>
-                <Badge value="pending">UI 준비</Badge>
-              </div>
-              <div className="form-grid compact-form-grid">
-                <label className="field"><span>대상 회차</span><input type="datetime-local" /></label>
-                <label className="field">
-                  <span>처리 방식</span>
-                  <select defaultValue="modify"><option value="modify">회차 수정</option><option value="cancel">회차 취소</option></select>
-                </label>
-                <label className="field"><span>변경 제목</span><input type="text" defaultValue={recurringDraft.title} /></label>
-                <label className="field"><span>변경 시작</span><input type="datetime-local" /></label>
-                <label className="field"><span>변경 종료</span><input type="datetime-local" /></label>
-              </div>
-            </section>
-            <section className="feature-draft-card">
-              <div className="feature-draft-heading">
-                <div>
-                  <strong>이후 일정 분리</strong>
-                  <span>기준 회차부터 새로운 반복 시리즈로 분리합니다.</span>
-                </div>
-                <Badge value="pending">UI 준비</Badge>
-              </div>
-              <div className="form-grid compact-form-grid">
-                <label className="field"><span>분리 기준 회차</span><input type="datetime-local" /></label>
-                <label className="field"><span>새 시리즈 제목</span><input type="text" defaultValue={recurringDraft.title} /></label>
-                <label className="field"><span>반복 규칙</span><input type="text" defaultValue={recurringDraft.recurrence_rule || "FREQ=WEEKLY"} /></label>
-                <label className="field"><span>새 종료 시각</span><input type="datetime-local" /></label>
-              </div>
-            </section>
-          </div>
-        </Modal>
+          onSaveException={actions.saveCalendarException}
+          onSplit={actions.saveCalendarSplit}
+        />
       ) : null}
     </div>
   );

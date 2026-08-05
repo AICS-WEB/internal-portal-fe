@@ -6,21 +6,26 @@ import {
   changeUserRole,
   changeUserStatus,
   checkAttendance,
+  createCalendarException,
   createExpense,
   createLeave,
   createNotice,
+  createNotification,
   createPurchase,
   createResource,
   deleteResource,
   getFileDownload,
   getBudgets,
   getExpenses,
+  getCalendarEvents,
   getLeaveBalance,
   getNotice,
+  getUserLeaveBalance,
   getPublication,
   loadPortalData,
   logCredentialCopy,
   markAllNotificationsRead,
+  markNotificationRead,
   normalizeAttendanceRecord,
   normalizeResource,
   patchAttendanceRecord,
@@ -29,6 +34,7 @@ import {
   reviewLeave,
   reviewPurchase,
   setNoticePinned,
+  splitCalendarRecurrence,
   updateResource,
   updateMyProfile,
 } from "./api/portal.js";
@@ -622,6 +628,10 @@ export default function App() {
     setData((current) => ({ ...current, budgets, expenses }));
   };
 
+  const refreshCalendarData = async () => {
+    updateCollection("calendarEvents", await getCalendarEvents());
+  };
+
   const openCreate = (key, overrides = {}) => {
     if (key === "notices" && !hasRole(currentUser, "manager")) {
       showToast("공지 등록은 관리자만 사용할 수 있습니다.", "warning");
@@ -826,6 +836,38 @@ export default function App() {
     }
   };
 
+  const markSingleNotificationRead = async (id) => {
+    const updated = await markNotificationRead(id);
+    replaceItem("notifications", id, updated);
+    showToast("알림을 읽음 처리했습니다.");
+    return updated;
+  };
+
+  const sendNotification = async (values) => {
+    const created = await createNotification(values);
+    if (Number(created.user_id) === Number(currentUser.id)) {
+      updateCollection("notifications", (items) => [created, ...items]);
+    }
+    showToast("알림을 발송했습니다.");
+    return created;
+  };
+
+  const saveCalendarException = async (eventId, values) => {
+    const result = await createCalendarException(eventId, values);
+    await refreshCalendarData();
+    showToast(values.isCancelled ? "해당 회차를 취소했습니다." : "해당 회차를 변경했습니다.");
+    return result;
+  };
+
+  const saveCalendarSplit = async (eventId, values) => {
+    const result = await splitCalendarRecurrence(eventId, values);
+    await refreshCalendarData();
+    showToast("이후 일정을 새 반복 시리즈로 분리했습니다.");
+    return result;
+  };
+
+  const queryUserLeaveBalance = (userId, year) => getUserLeaveBalance(userId, year);
+
   const showNotifications = () => setNotificationCenterOpen(true);
 
   const submitForm = async (values) => {
@@ -962,6 +1004,9 @@ export default function App() {
     openPasswordChange,
     handleAttendance,
     updateAttendance,
+    saveCalendarException,
+    saveCalendarSplit,
+    queryUserLeaveBalance,
     openNoticeDetail,
     openNoticeEdit,
     openPublicationDetail,
@@ -1048,8 +1093,11 @@ export default function App() {
         <NotificationCenterModal
           notifications={data.notifications}
           currentUser={currentUser}
+          users={data.users}
           onClose={() => setNotificationCenterOpen(false)}
           onMarkAllRead={markNotificationsRead}
+          onMarkRead={markSingleNotificationRead}
+          onSend={sendNotification}
         />
       ) : null}
       {confirmModal ? (

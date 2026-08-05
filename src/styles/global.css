@@ -1604,6 +1604,28 @@ button:disabled {
   margin: 0;
 }
 
+.recurring-error {
+  margin-bottom: 14px;
+}
+
+.manager-balance-result {
+  display: grid;
+  gap: 12px;
+  border-top: 1px solid var(--border);
+  padding-top: 14px;
+}
+
+.manager-balance-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.manager-balance-title span {
+  color: var(--muted);
+  font-size: 13px;
+}
+
 .file-draft-field input[type="file"] {
   padding: 6px;
 }

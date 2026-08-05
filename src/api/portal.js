@@ -348,6 +348,39 @@ export async function getLeaveBalance() {
   return apiRequest("/leave/balance");
 }
 
+export async function getUserLeaveBalance(userId, year) {
+  return apiRequest(`/leave/balance/${userId}`, { query: { year } });
+}
+
+export async function getCalendarEvents() {
+  const items = await apiRequest("/calendar/events", { query: calendarRange() });
+  return items.map((item) => normalizeResource("calendarEvents", item));
+}
+
+export async function createCalendarException(eventId, value) {
+  return apiRequest(`/calendar/events/${eventId}/exceptions`, { method: "POST", body: value });
+}
+
+export async function splitCalendarRecurrence(eventId, value) {
+  return apiRequest(`/calendar/events/${eventId}/split`, { method: "POST", body: value });
+}
+
+export async function markNotificationRead(id) {
+  return normalizeNotification(await apiRequest(`/notifications/${id}/read`, { method: "PATCH" }));
+}
+
+export async function createNotification(value) {
+  return normalizeNotification(await apiRequest("/notifications", {
+    method: "POST",
+    body: {
+      userId: Number(value.userId),
+      type: value.type,
+      title: value.title,
+      message: value.message,
+    },
+  }));
+}
+
 export async function markAllNotificationsRead() {
   return apiRequest("/notifications/read-all", { method: "PATCH" });
 }
@@ -398,7 +431,7 @@ export async function loadPortalData(currentUser) {
     ]).then(([profile, users]) => [profile, ...users.filter((user) => Number(user.id) !== Number(profile.id))]),
     attendanceRecords: apiRequest("/attendance/records").then((items) => items.map((item) => normalizeAttendanceRecord(item))),
     notices: apiRequest("/notices").then((data) => (data.notices || []).map(normalizeNotice)),
-    calendarEvents: apiRequest("/calendar/events", { query: calendarRange() }).then((items) => items.map((item) => normalizeResource("calendarEvents", item))),
+    calendarEvents: getCalendarEvents(),
     publications: apiRequest("/publications").then((items) => items.map((item) => normalizeResource("publications", item))),
     sharedFiles: apiRequest("/files").then((items) => items.map((item) => normalizeResource("sharedFiles", item))),
     purchaseRequests: apiRequest("/procurement/requests"),

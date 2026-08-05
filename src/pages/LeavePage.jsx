@@ -18,12 +18,31 @@ export default function LeavePage({ data, currentUser, actions }) {
   const [status, setStatus] = useState("all");
   const [balanceUserId, setBalanceUserId] = useState("");
   const [balanceYear, setBalanceYear] = useState(String(new Date().getFullYear()));
+  const [queriedBalance, setQueriedBalance] = useState(null);
+  const [balanceLoading, setBalanceLoading] = useState(false);
+  const [balanceError, setBalanceError] = useState("");
   const canReview = hasRole(currentUser, "manager");
   const balance = data.leaveBalances.find((item) => item.user_id === currentUser.id) || data.leaveBalances[0];
 
   const rows = useMemo(() => {
     return data.leaveRequests.filter((request) => status === "all" || request.status === status);
   }, [data.leaveRequests, status]);
+
+  const lookupBalance = async () => {
+    if (!balanceUserId) return;
+    setBalanceLoading(true);
+    setBalanceError("");
+    try {
+      const result = await actions.queryUserLeaveBalance(balanceUserId, balanceYear);
+      const user = data.users.find((item) => String(item.id) === String(balanceUserId));
+      setQueriedBalance({ ...result, user_name: user?.name || "-" });
+    } catch (error) {
+      setBalanceError(error.message);
+      setQueriedBalance(null);
+    } finally {
+      setBalanceLoading(false);
+    }
+  };
 
   const columns = [
     { key: "user_name", header: "신청자" },
@@ -106,9 +125,24 @@ export default function LeavePage({ data, currentUser, actions }) {
               <span>조회 연도</span>
               <input type="number" min="2000" max="2100" value={balanceYear} onChange={(event) => setBalanceYear(event.target.value)} />
             </label>
-            <Button variant="primary" disabled>잔여일 조회</Button>
+            <Button variant="primary" disabled={!balanceUserId || balanceLoading} onClick={lookupBalance}>
+              {balanceLoading ? "조회 중..." : "잔여일 조회"}
+            </Button>
           </div>
-          <p className="feature-caption">조회 결과 카드와 사용자별 잔여일 API는 다음 연동 단계에서 활성화됩니다.</p>
+          {balanceError ? <div className="register-submit-error" role="alert">{balanceError}</div> : null}
+          {queriedBalance ? (
+            <div className="manager-balance-result">
+              <div className="manager-balance-title">
+                <strong>{queriedBalance.user_name}</strong>
+                <span>{queriedBalance.year}년 휴가 현황</span>
+              </div>
+              <div className="summary-grid three">
+                <StatCard label="총 휴가" value={`${queriedBalance.total_days || 0}일`} />
+                <StatCard label="사용" value={`${queriedBalance.used_days || 0}일`} tone="warning" />
+                <StatCard label="잔여" value={`${queriedBalance.remaining_days || 0}일`} tone="success" />
+              </div>
+            </div>
+          ) : <p className="feature-caption">구성원을 선택하면 해당 연도의 휴가 장부를 조회할 수 있습니다.</p>}
         </section>
       ) : null}
 

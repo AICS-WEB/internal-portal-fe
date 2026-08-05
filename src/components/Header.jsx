@@ -28,9 +28,6 @@ export default function Header({
   return (
     <header className="top-header">
       <div className="header-title-row">
-        <Button className="mobile-menu-button" variant="ghost" size="sm" onClick={onMenuClick}>
-          메뉴
-        </Button>
         <div>
           <h1>{title}</h1>
           <p>AICS Lab 내부 운영 포털</p>

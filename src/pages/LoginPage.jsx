@@ -8,6 +8,8 @@ export default function LoginPage({ onLogin, onRegister }) {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [resetMode, setResetMode] = useState(false);
+  const [resetEmail, setResetEmail] = useState("");
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -55,11 +57,33 @@ export default function LoginPage({ onLogin, onRegister }) {
 
         <div className="login-card">
           <div className="login-card-copy">
-            <p className="register-eyebrow">WELCOME BACK</p>
-            <h2>로그인</h2>
-            <p>승인된 연구실 계정으로 로그인해 주세요.</p>
+            <p className="register-eyebrow">{resetMode ? "PASSWORD RESET" : "WELCOME BACK"}</p>
+            <h2>{resetMode ? "비밀번호 재설정" : "로그인"}</h2>
+            <p>{resetMode ? "가입한 이메일로 재설정 안내를 받을 수 있습니다." : "승인된 연구실 계정으로 로그인해 주세요."}</p>
           </div>
 
+          {resetMode ? (
+            <form className="login-form" onSubmit={(event) => event.preventDefault()}>
+              <label className="field">
+                <span>가입 이메일</span>
+                <input
+                  type="email"
+                  autoComplete="email"
+                  value={resetEmail}
+                  onChange={(event) => setResetEmail(event.target.value)}
+                  placeholder="name@sch.ac.kr"
+                  autoFocus
+                />
+              </label>
+              <div className="feature-pending-note">
+                재설정 메일 발송 화면이 준비되었습니다. API 연결 후 발송 버튼이 활성화됩니다.
+              </div>
+              <Button type="submit" variant="primary" className="login-submit" disabled>
+                재설정 메일 발송
+              </Button>
+              <Button variant="ghost" onClick={() => setResetMode(false)}>로그인으로 돌아가기</Button>
+            </form>
+          ) : (
           <form className="login-form" onSubmit={handleSubmit}>
             <label className="field">
               <span>이메일</span>
@@ -76,7 +100,10 @@ export default function LoginPage({ onLogin, onRegister }) {
               />
             </label>
             <label className="field">
-              <span>비밀번호</span>
+              <span className="field-label-row">
+                <span>비밀번호</span>
+                <button type="button" onClick={() => setResetMode(true)}>비밀번호를 잊으셨나요?</button>
+              </span>
               <input
                 type="password"
                 autoComplete="current-password"
@@ -95,11 +122,12 @@ export default function LoginPage({ onLogin, onRegister }) {
               {submitting ? "로그인 중..." : "로그인"}
             </Button>
           </form>
+          )}
 
-          <div className="login-register-prompt">
+          {!resetMode ? <div className="login-register-prompt">
             <span>아직 연구실 계정이 없나요?</span>
             <button type="button" onClick={onRegister}>회원가입 신청</button>
-          </div>
+          </div> : null}
 
           <p className="login-help">계정 승인이 필요한 경우 연구실 관리자에게 문의해 주세요.</p>
         </div>

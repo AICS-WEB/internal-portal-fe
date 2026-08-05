@@ -36,6 +36,7 @@ import Button from "./components/Button.jsx";
 import ConfirmModal from "./components/ConfirmModal.jsx";
 import Header from "./components/Header.jsx";
 import Modal from "./components/Modal.jsx";
+import NotificationCenterModal from "./components/NotificationCenterModal.jsx";
 import Sidebar from "./components/Sidebar.jsx";
 import Toast from "./components/Toast.jsx";
 import AttendancePage from "./pages/AttendancePage.jsx";
@@ -118,6 +119,13 @@ function buildResourceConfigs(currentUser, data) {
           options: ["general", "important", "account_info", "schedule"],
         },
         { name: "content", label: "content", type: "textarea" },
+        {
+          name: "attachment_files",
+          label: "첨부파일",
+          type: "file",
+          multiple: true,
+          help: "업로드 API 연결 전에는 첨부 없이 공지를 저장해 주세요.",
+        },
         { name: "is_pinned", label: "is_pinned", type: "checkbox" },
       ],
       create: (values) => ({
@@ -204,12 +212,28 @@ function buildResourceConfigs(currentUser, data) {
       fields: [
         { name: "title", label: "title", type: "text" },
         { name: "authors_text", label: "authors_text", type: "text" },
+        {
+          name: "author_user_ids",
+          label: "내부 저자 연결",
+          type: "multiselect",
+          options: data.users
+            .filter((user) => user.account_status === "approved")
+            .map((user) => option(user.id, `${user.name} · ${user.email}`)),
+          help: "저자 순서·교신저자 API 연결 후 저장됩니다.",
+        },
         { name: "year", label: "year", type: "text" },
         { name: "published_date", label: "published_date", type: "date" },
         { name: "pub_type", label: "pub_type", type: "select", options: ["sci", "kci", "intl_conf", "domestic_conf"] },
         { name: "status", label: "status", type: "select", options: ["writing", "submitted", "under_review", "accepted", "published"] },
         { name: "venue", label: "venue", type: "text" },
         { name: "doi", label: "doi", type: "text" },
+        {
+          name: "attachment_files",
+          label: "논문 첨부파일",
+          type: "file",
+          multiple: true,
+          help: "원문·증빙 파일 업로드 UI입니다. 저장소 API 연결 후 활성화됩니다.",
+        },
         { name: "is_public", label: "is_public", type: "checkbox" },
       ],
       create: (values) => ({ id: uid("pub"), ...values }),
@@ -291,6 +315,14 @@ function buildResourceConfigs(currentUser, data) {
         { name: "item_name", label: "item_name", type: "text" },
         { name: "amount", label: "amount", type: "number" },
         { name: "date", label: "date", type: "date" },
+        {
+          name: "receipt_files",
+          label: "영수증",
+          type: "file",
+          multiple: false,
+          accept: "image/*,.pdf",
+          help: "이미지 또는 PDF 영수증 UI입니다. 저장소 API 연결 전에는 첨부 없이 등록해 주세요.",
+        },
       ],
       create: (values) => ({ id: uid("expense"), ...values, status: "pending", receipt: "" }),
     },
@@ -324,6 +356,12 @@ function normalizeValues(fields, values) {
       return acc;
     },
     { ...values },
+  );
+}
+
+function hasPendingFeatureData(values) {
+  return ["attachment_files", "receipt_files", "author_user_ids"].some(
+    (key) => Array.isArray(values[key]) && values[key].length > 0,
   );
 }
 
@@ -377,6 +415,63 @@ function FormModal({ modal, onClose, onSubmit, submitting = false }) {
                 <span>{field.label}</span>
                 <textarea value={value} rows={4} onChange={(event) => updateValue(field.name, event.target.value)} />
               </label>
+            );
+          }
+
+          if (field.type === "file") {
+            const files = Array.isArray(value) ? value : [];
+            return (
+              <div key={field.name} className="field file-draft-field">
+                <span>{field.label}</span>
+                <input
+                  key={files.map((file) => file.filename).join("|") || "empty"}
+                  type="file"
+                  multiple={field.multiple}
+                  accept={field.accept}
+                  onChange={(event) => updateValue(field.name, Array.from(event.target.files || []).map((file) => ({
+                    filename: file.name,
+                    mime_type: file.type,
+                    filesize: file.size,
+                  })))}
+                />
+                {files.length ? (
+                  <div className="file-draft-summary">
+                    <ul className="file-draft-list">
+                      {files.map((file) => <li key={`${file.filename}-${file.filesize}`}>{file.filename}</li>)}
+                    </ul>
+                    <Button size="sm" variant="ghost" onClick={() => updateValue(field.name, [])}>선택 해제</Button>
+                  </div>
+                ) : null}
+                {field.help ? <small className="field-help">{field.help}</small> : null}
+              </div>
+            );
+          }
+
+          if (field.type === "multiselect") {
+            const selected = Array.isArray(value) ? value.map(String) : [];
+            return (
+              <fieldset key={field.name} className="multi-select-field">
+                <legend>{field.label}</legend>
+                <div className="multi-select-grid">
+                  {field.options.map((item) => {
+                    const optionItem = typeof item === "string" ? option(item) : item;
+                    const optionValue = String(optionItem.value);
+                    return (
+                      <label key={optionValue}>
+                        <input
+                          type="checkbox"
+                          checked={selected.includes(optionValue)}
+                          onChange={(event) => updateValue(field.name, event.target.checked
+                            ? [...selected, optionValue]
+                            : selected.filter((itemValue) => itemValue !== optionValue))}
+                        />
+                        <span>{optionItem.label || optionValue}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+                {field.help ? <small className="field-help">{field.help}</small> : null}
+              </fieldset>
             );
           }
 
@@ -449,6 +544,7 @@ export default function App() {
   const [formModal, setFormModal] = useState(null);
   const [detailModal, setDetailModal] = useState(null);
   const [confirmModal, setConfirmModal] = useState(null);
+  const [notificationCenterOpen, setNotificationCenterOpen] = useState(false);
   const [toast, setToast] = useState(null);
 
   const resourceConfigs = useMemo(() => buildResourceConfigs(currentUser, data), [currentUser, data]);
@@ -547,6 +643,9 @@ export default function App() {
       submitLabel: config.submitCreate || "등록",
       successMessage: `${config.createTitle}이 완료되었습니다.`,
       onSubmit: async (values) => {
+        if (hasPendingFeatureData(values)) {
+          throw new Error("첨부파일·저자 상세 API 연결 전입니다. 준비 중인 항목 선택을 해제한 뒤 저장해 주세요.");
+        }
         let created;
         if (key === "notices") created = await createNotice(values);
         else if (key === "leaveRequests") created = await createLeave(values);
@@ -580,6 +679,9 @@ export default function App() {
       submitLabel: config.submitEdit || "저장",
       successMessage: `${config.editTitle}이 완료되었습니다.`,
       onSubmit: async (values) => {
+        if (hasPendingFeatureData(values)) {
+          throw new Error("첨부파일·저자 상세 API 연결 전입니다. 준비 중인 항목 선택을 해제한 뒤 저장해 주세요.");
+        }
         const updated = normalizeResource(key, await updateResource(key, item.id, values));
         if (key === "budgets") updated.used_amount = item.used_amount;
         replaceItem(key, item.id, updated);
@@ -607,6 +709,7 @@ export default function App() {
               .then((balance) => updateCollection("leaveBalances", [balance]))
               .catch(() => showToast("휴가 신청은 삭제되었지만 잔여일 갱신에 실패했습니다.", "warning"));
           }
+
           if (key === "researchProjects") {
             updateCollection("budgets", (items) => items.map((budget) => (
               Number(budget.project_id) === Number(id) ? { ...budget, project_id: null } : budget
@@ -711,20 +814,19 @@ export default function App() {
     });
   };
 
-  const showNotifications = async () => {
+  const markNotificationsRead = async () => {
     try {
       if (data.notifications.some((notification) => !notification.read)) {
         await markAllNotificationsRead();
         updateCollection("notifications", (items) => items.map((item) => ({ ...item, read: true, is_read: true })));
       }
-      openDetail("알림", data.notifications.map((notification) => ({
-        label: notification.title,
-        value: `${notification.message} · ${notification.created_at}`,
-      })));
+      showToast("모든 알림을 읽음 처리했습니다.");
     } catch (error) {
       showToast(error.message, "error");
     }
   };
+
+  const showNotifications = () => setNotificationCenterOpen(true);
 
   const submitForm = async (values) => {
     setFormSubmitting(true);
@@ -942,6 +1044,14 @@ export default function App() {
 
       {formModal ? <FormModal modal={formModal} onClose={() => setFormModal(null)} onSubmit={submitForm} submitting={formSubmitting} /> : null}
       {detailModal ? <DetailModal detail={detailModal} onClose={() => setDetailModal(null)} /> : null}
+      {notificationCenterOpen ? (
+        <NotificationCenterModal
+          notifications={data.notifications}
+          currentUser={currentUser}
+          onClose={() => setNotificationCenterOpen(false)}
+          onMarkAllRead={markNotificationsRead}
+        />
+      ) : null}
       {confirmModal ? (
         <ConfirmModal
           title={confirmModal.title}

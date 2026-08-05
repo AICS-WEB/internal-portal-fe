@@ -16,6 +16,8 @@ const statusOptions = [
 
 export default function LeavePage({ data, currentUser, actions }) {
   const [status, setStatus] = useState("all");
+  const [balanceUserId, setBalanceUserId] = useState("");
+  const [balanceYear, setBalanceYear] = useState(String(new Date().getFullYear()));
   const canReview = hasRole(currentUser, "manager");
   const balance = data.leaveBalances.find((item) => item.user_id === currentUser.id) || data.leaveBalances[0];
 
@@ -83,6 +85,32 @@ export default function LeavePage({ data, currentUser, actions }) {
       <section className="toolbar-panel">
         <FilterTabs options={statusOptions} value={status} onChange={setStatus} />
       </section>
+
+      {canReview ? (
+        <section className="panel manager-query-panel">
+          <SectionHeader
+            title="구성원 휴가 잔여일 조회"
+            description="사용자와 연도를 선택해 개인별 부여·사용·잔여 일수를 조회합니다."
+          />
+          <div className="manager-query-grid">
+            <label className="field">
+              <span>구성원</span>
+              <select value={balanceUserId} onChange={(event) => setBalanceUserId(event.target.value)}>
+                <option value="">구성원 선택</option>
+                {data.users.filter((user) => user.account_status === "approved").map((user) => (
+                  <option key={user.id} value={user.id}>{user.name} · {user.email}</option>
+                ))}
+              </select>
+            </label>
+            <label className="field">
+              <span>조회 연도</span>
+              <input type="number" min="2000" max="2100" value={balanceYear} onChange={(event) => setBalanceYear(event.target.value)} />
+            </label>
+            <Button variant="primary" disabled>잔여일 조회</Button>
+          </div>
+          <p className="feature-caption">조회 결과 카드와 사용자별 잔여일 API는 다음 연동 단계에서 활성화됩니다.</p>
+        </section>
+      ) : null}
 
       <DataTable columns={columns} rows={rows} />
     </div>

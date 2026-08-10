@@ -32,6 +32,21 @@ export async function requestPasswordReset(email) {
   }
 }
 
+export async function resetPassword({ token, newPassword }) {
+  try {
+    return await apiRequest("/auth/password/reset", {
+      method: "POST",
+      body: { token, newPassword },
+      auth: false,
+    });
+  } catch (error) {
+    if (error.status === 401) {
+      throw new Error("유효하지 않거나 만료된 재설정 링크입니다. 새 메일을 요청해 주세요.");
+    }
+    throw new Error(error.message || "비밀번호를 재설정하지 못했습니다. 잠시 후 다시 시도해 주세요.");
+  }
+}
+
 export async function logoutUser(refreshToken) {
   if (!refreshToken) return;
   await apiRequest("/auth/logout", { method: "POST", body: { refreshToken }, auth: false });

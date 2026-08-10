@@ -1453,6 +1453,32 @@ button:disabled {
   line-height: 1.5;
 }
 
+.reset-password-complete {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  margin-top: 34px;
+  text-align: center;
+}
+
+.reset-password-complete-icon {
+  display: grid;
+  width: 64px;
+  height: 64px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--success-soft);
+  color: var(--success);
+  font-size: 30px;
+  font-weight: 900;
+}
+
+.reset-password-complete p {
+  margin: 4px 0 8px;
+  color: #374151;
+  font-weight: 700;
+}
+
 .field-label-row {
   display: flex;
   align-items: center;

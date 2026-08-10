@@ -64,6 +64,7 @@ import ProjectsPage from "./pages/ProjectsPage.jsx";
 import PublicationsPage from "./pages/PublicationsPage.jsx";
 import PurchasesPage from "./pages/PurchasesPage.jsx";
 import RegisterPage from "./pages/RegisterPage.jsx";
+import ResetPasswordPage from "./pages/ResetPasswordPage.jsx";
 import { todayISO } from "./utils/format.js";
 import { canAccess, hasRole } from "./utils/permissions.js";
 
@@ -566,6 +567,7 @@ function DetailModal({ detail, onClose }) {
 export default function App() {
   const [authSession, setAuthSession] = useState(() => readAuthSession());
   const [showRegister, setShowRegister] = useState(() => window.location.hash === "#/register");
+  const isPasswordResetRoute = window.location.pathname.replace(/\/+$/, "") === "/reset-password";
   const [activePage, setActivePage] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [globalSearch, setGlobalSearch] = useState("");
@@ -1177,6 +1179,14 @@ export default function App() {
       window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
     }
   };
+
+  const returnToLogin = () => {
+    window.location.assign("/");
+  };
+
+  if (isPasswordResetRoute) {
+    return <ResetPasswordPage onBackToLogin={returnToLogin} />;
+  }
 
   if (!authSession && showRegister) {
     return <RegisterPage onBack={closeRegister} />;

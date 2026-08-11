@@ -1,0 +1,22 @@
+.preview-entry {
+  margin-top: 22px;
+  padding: 18px 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+.preview-entry > span { font-weight: 600; }
+.preview-entry > small { grid-column: 1 / -1; color: var(--muted); }
+.preview-banner {
+  margin: -12px 0 22px;
+  padding: 9px 12px;
+  background: var(--primary-soft);
+  border: 1px solid #d9e6df;
+  border-radius: 8px;
+  color: var(--primary);
+  font-size: 12px;
+}
+.preview-banner::after { content: " 브라우저에만 저장됩니다."; opacity: .72; }

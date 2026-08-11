@@ -1,0 +1,10 @@
+"use client";
+import { useCallback } from "react";
+import { Clock3 } from "lucide-react";
+import { api } from "../lib/api"; import { asArray, formatDate, useResource } from "../lib/hooks"; import type { User } from "../lib/types"; import { Button, EmptyState, ErrorState, LoadingState, PageHeader } from "../components/ui";
+export default function DashboardPage({user,onAttendance}:{user:User|null;onAttendance:()=>void}){
+ const notices=useResource(useCallback(()=>api.notices.list(),[])); const events=useResource(useCallback(()=>api.calendar.list(),[]));
+ const noticeItems=asArray(notices.data).slice(0,4); const today=new Date().toISOString().slice(0,10); const todayEvents=asArray(events.data).filter(e=>String(e.startAt||e.start||e.date||"").slice(0,10)===today);
+ return <><PageHeader title="Dashboard" description={`Good morning, ${String(user?.name||"AICS Member")}. 오늘 필요한 연구실 정보를 확인하세요.`}/><div className="dashboard-layout"><section className="plain-section"><h2>Recent Notices</h2>{notices.loading?<LoadingState/>:notices.error?<ErrorState message={notices.error} retry={notices.reload}/>:noticeItems.length===0?<EmptyState title="등록된 공지가 없습니다" description="새 공지가 등록되면 여기에 표시됩니다."/>:<div className="content-list">{noticeItems.map((n,i)=><article key={String(n.id||i)}><strong>{String(n.title||"제목 없음")}</strong><p>{String(n.content||n.body||n.preview||"").slice(0,120)}</p><small>{String(n.author?.name||n.authorName||"")} {formatDate(n.createdAt)}</small></article>)}</div>}</section><aside className="today-panel"><h2>Today</h2><p className="today-date">{new Intl.DateTimeFormat("ko-KR",{weekday:"long",month:"long",day:"numeric"}).format(new Date())}</p>{events.loading?<LoadingState/>:events.error?<p className="muted">일정을 불러오지 못했습니다.</p>:todayEvents.length===0?<p className="muted">오늘 등록된 일정이 없습니다.</p>:todayEvents.map((e,i)=><div className="today-event" key={String(e.id||i)}><span/><strong>{String(e.title||"일정")}</strong></div>)}<div className="attendance-shortcut"><Clock3 size={18}/><div><strong>Attendance</strong><span>오늘의 출퇴근을 기록하세요.</span></div><Button onClick={onAttendance}>열기</Button></div></aside></div></>;
+}
+

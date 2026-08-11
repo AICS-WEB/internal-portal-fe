@@ -1,0 +1,13 @@
+.preview-note {
+  height: 32px;
+  display: flex;
+  align-items: center;
+  padding: 0 36px;
+  background: var(--primary-soft);
+  border-bottom: 1px solid #dbe2fb;
+  color: #405cb8;
+  font-size: 12px;
+}
+@media (max-width: 650px) {
+  .preview-note { padding: 0 18px; }
+}

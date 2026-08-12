@@ -46,6 +46,15 @@ const DEMO_TASKS = [
 
 const ROLE_LABELS = { member: "구성원", manager: "매니저", admin: "관리자" };
 
+// Quick-create shortcuts (replaces the decorative metric bars in the greeting row).
+const QUICK_ACTIONS = [
+  { label: "공지 작성", resource: "notices" },
+  { label: "일정 등록", resource: "calendarEvents" },
+  { label: "휴가 신청", resource: "leaveRequests" },
+  { label: "파일 업로드", resource: "sharedFiles" },
+  { label: "구매 신청", resource: "purchaseRequests" },
+];
+
 function pad(n) {
   return String(n).padStart(2, "0");
 }
@@ -102,7 +111,7 @@ function TimeTracker({ seedSeconds, seedRunning }) {
   );
 }
 
-export default function DashboardPage({ data, currentUser }) {
+export default function DashboardPage({ data, currentUser, actions }) {
   const today = todayISO();
   const [openAcc, setOpenAcc] = useState(1);
   const [doneTasks, setDoneTasks] = useState([0, 1]);
@@ -173,22 +182,19 @@ export default function DashboardPage({ data, currentUser }) {
       <div className="hr-greeting-row">
         <div className="hr-greeting">
           <h1>안녕하세요, {currentUser.name}님</h1>
-          <div className="hr-metric-bars">
-            <div style={{ width: 112 }}>
-              <div className="hr-metric-cap">면접</div>
-              <div className="hr-metric-pill ink">15%</div>
-            </div>
-            <div style={{ width: 84 }}>
-              <div className="hr-metric-cap">채용</div>
-              <div className="hr-metric-pill accent">15%</div>
-            </div>
-            <div style={{ flex: 1, minWidth: 0 }}>
-              <div className="hr-metric-cap">프로젝트 시간</div>
-              <div className="hr-metric-pill striped">60%</div>
-            </div>
-            <div style={{ width: 96 }}>
-              <div className="hr-metric-cap">산출</div>
-              <div className="hr-metric-pill outline">10%</div>
+          <div className="hr-quick-wrap">
+            <div className="hr-metric-cap">빠른 실행</div>
+            <div className="hr-quick">
+              {QUICK_ACTIONS.map((action) => (
+                <button
+                  key={action.resource}
+                  type="button"
+                  className="hr-quick-btn"
+                  onClick={() => actions.openCreate(action.resource)}
+                >
+                  {action.label}
+                </button>
+              ))}
             </div>
           </div>
         </div>

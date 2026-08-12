@@ -3,7 +3,6 @@ import Badge from "../components/Badge.jsx";
 import Button from "../components/Button.jsx";
 import DataTable from "../components/DataTable.jsx";
 import FilterTabs from "../components/FilterTabs.jsx";
-import Pagination from "../components/Pagination.jsx";
 import SearchInput from "../components/SearchInput.jsx";
 import SectionHeader from "../components/SectionHeader.jsx";
 import { hasRole } from "../utils/permissions.js";
@@ -20,7 +19,6 @@ export default function NoticesPage({ data, currentUser, actions, globalSearch }
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("all");
   const [sort, setSort] = useState("latest");
-  const [page, setPage] = useState(1);
   const canManage = hasRole(currentUser, "manager");
 
   const filteredNotices = useMemo(() => {
@@ -37,10 +35,6 @@ export default function NoticesPage({ data, currentUser, actions, globalSearch }
         return b.created_at.localeCompare(a.created_at);
       });
   }, [category, data.notices, globalSearch, search, sort]);
-
-  const pageSize = 8;
-  const totalPages = Math.max(1, Math.ceil(filteredNotices.length / pageSize));
-  const currentRows = filteredNotices.slice((page - 1) * pageSize, page * pageSize);
 
   const columns = [
     {
@@ -102,13 +96,7 @@ export default function NoticesPage({ data, currentUser, actions, globalSearch }
         </select>
       </section>
 
-      <DataTable columns={columns} rows={currentRows} />
-      <Pagination
-        page={Math.min(page, totalPages)}
-        totalPages={totalPages}
-        onPrev={() => setPage((current) => Math.max(1, current - 1))}
-        onNext={() => setPage((current) => Math.min(totalPages, current + 1))}
-      />
+      <DataTable columns={columns} rows={filteredNotices} />
     </div>
   );
 }

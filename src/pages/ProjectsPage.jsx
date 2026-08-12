@@ -2,8 +2,10 @@ import { useMemo, useState } from "react";
 import Badge from "../components/Badge.jsx";
 import Button from "../components/Button.jsx";
 import FilterTabs from "../components/FilterTabs.jsx";
+import Pagination from "../components/Pagination.jsx";
 import SearchInput from "../components/SearchInput.jsx";
 import SectionHeader from "../components/SectionHeader.jsx";
+import { usePagedList } from "../hooks/usePagedList.js";
 import { hasRole } from "../utils/permissions.js";
 
 export default function ProjectsPage({ data, currentUser, actions, globalSearch }) {
@@ -26,6 +28,8 @@ export default function ProjectsPage({ data, currentUser, actions, globalSearch 
       });
   }, [data.researchProjects, globalSearch, search, status]);
 
+  const { pageItems, page, totalPages, onPrev, onNext } = usePagedList(projects, 9);
+
   return (
     <div className="page-stack">
       <SectionHeader
@@ -42,7 +46,7 @@ export default function ProjectsPage({ data, currentUser, actions, globalSearch 
       </section>
 
       <section className="card-grid">
-        {projects.map((project) => (
+        {pageItems.map((project) => (
           <article key={project.id} className="project-card">
             <div className="card-topline">
               <Badge value={project.status || "unknown"} />
@@ -75,6 +79,7 @@ export default function ProjectsPage({ data, currentUser, actions, globalSearch 
           </article>
         ))}
       </section>
+      {totalPages > 1 ? <Pagination page={page} totalPages={totalPages} onPrev={onPrev} onNext={onNext} /> : null}
     </div>
   );
 }

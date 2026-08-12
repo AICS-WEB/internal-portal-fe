@@ -1,12 +1,15 @@
 import Badge from "../components/Badge.jsx";
 import Button from "../components/Button.jsx";
 import DataTable from "../components/DataTable.jsx";
+import Pagination from "../components/Pagination.jsx";
 import SectionHeader from "../components/SectionHeader.jsx";
+import { usePagedList } from "../hooks/usePagedList.js";
 import { formatCurrency } from "../utils/format.js";
 import { hasRole } from "../utils/permissions.js";
 
 export default function BudgetPage({ data, currentUser, actions }) {
   const canManage = hasRole(currentUser, "manager");
+  const budgetPage = usePagedList(data.budgets, 9);
   const columns = [
     {
       key: "item_name",
@@ -54,7 +57,7 @@ export default function BudgetPage({ data, currentUser, actions }) {
       {!data.budgets.length ? <p className="muted-note">등록된 예산 장부가 없습니다. 관리자가 예산을 먼저 등록해야 지출을 신청할 수 있습니다.</p> : null}
 
       <section className="budget-grid">
-        {data.budgets.map((budget) => {
+        {budgetPage.pageItems.map((budget) => {
           const percent = budget.total_budget > 0
             ? Math.min(100, Math.round((budget.used_amount / budget.total_budget) * 100))
             : 0;
@@ -86,6 +89,9 @@ export default function BudgetPage({ data, currentUser, actions }) {
           );
         })}
       </section>
+      {budgetPage.totalPages > 1 ? (
+        <Pagination page={budgetPage.page} totalPages={budgetPage.totalPages} onPrev={budgetPage.onPrev} onNext={budgetPage.onNext} />
+      ) : null}
 
       <DataTable columns={columns} rows={data.expenses} />
     </div>

@@ -280,10 +280,12 @@ button:disabled {
   display: grid;
   min-width: 170px;
   overflow: hidden;
-  border: 1px solid var(--border);
+  border: 1px solid var(--glass-border);
   border-radius: var(--card-radius);
-  background: var(--surface);
-  box-shadow: var(--shadow);
+  background: rgba(255, 255, 255, 0.7);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-shadow);
 }
 
 .quick-menu button {
@@ -326,10 +328,12 @@ button:disabled {
 .budget-card,
 .profile-card,
 .mini-card {
-  border: 1px solid var(--border);
+  border: 1px solid var(--glass-border);
   border-radius: var(--card-radius);
-  background: var(--surface);
-  box-shadow: var(--shadow);
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-shadow);
 }
 
 .stat-card {
@@ -512,13 +516,15 @@ button:disabled {
 }
 
 .btn-secondary {
-  border-color: var(--border);
-  background: var(--surface);
+  border-color: var(--glass-border);
+  background: rgba(255, 255, 255, 0.55);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
   color: #374151;
 }
 
 .btn-secondary:hover {
-  background: var(--surface-subtle);
+  background: rgba(255, 255, 255, 0.85);
 }
 
 .btn-danger {
@@ -575,9 +581,11 @@ button:disabled {
 .field select,
 .select-control {
   width: 100%;
-  border: 1px solid var(--border);
+  border: 1px solid var(--glass-border);
   border-radius: var(--control-radius);
-  background: #fff;
+  background: rgba(255, 255, 255, 0.55);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
   color: var(--text);
   outline: none;
 }
@@ -626,9 +634,9 @@ button:disabled {
 }
 
 .filter-tabs button {
-  border: 1px solid var(--border);
+  border: 1px solid var(--glass-border);
   border-radius: 999px;
-  background: var(--surface);
+  background: rgba(255, 255, 255, 0.5);
   color: #4b5563;
   padding: 7px 11px;
   font-size: 13px;
@@ -703,9 +711,9 @@ button:disabled {
   align-items: center;
   justify-content: space-between;
   gap: 14px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--glass-border);
   border-radius: var(--card-radius);
-  background: var(--surface-subtle);
+  background: rgba(255, 255, 255, 0.45);
   padding: 12px;
 }
 
@@ -806,10 +814,12 @@ button:disabled {
 
 .table-wrap {
   overflow-x: auto;
-  border: 1px solid var(--border);
+  border: 1px solid var(--glass-border);
   border-radius: var(--card-radius);
-  background: var(--surface);
-  box-shadow: var(--shadow);
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: var(--glass-shadow);
 }
 
 .data-table {
@@ -827,7 +837,7 @@ button:disabled {
 }
 
 .data-table th {
-  background: var(--surface-subtle);
+  background: rgba(255, 255, 255, 0.35);
   color: #4b5563;
   font-size: 12px;
   font-weight: 800;
@@ -867,9 +877,11 @@ button:disabled {
   display: grid;
   min-height: 132px;
   place-items: center;
-  border: 1px dashed var(--border);
+  border: 1px dashed var(--glass-border);
   border-radius: var(--card-radius);
-  background: var(--surface);
+  background: rgba(255, 255, 255, 0.32);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
   color: var(--muted);
   text-align: center;
 }
@@ -929,6 +941,66 @@ button:disabled {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Calendar page: month grid + event list side by side (~60% / ~40%), equal height */
+.calendar-layout {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr;
+  gap: 14px;
+  align-items: stretch;
+}
+
+.calendar-layout .calendar-panel {
+  display: flex;
+  flex-direction: column;
+  height: 680px;
+  overflow: hidden;
+}
+
+.calendar-layout .calendar-grid {
+  flex: 1;
+  min-height: 0; /* let flex shrink the grid so all week rows fit (no clipped 30/31) */
+  grid-auto-rows: minmax(0, 1fr);
+}
+
+.calendar-layout .calendar-cell {
+  min-height: 0;
+  padding: 8px;
+  overflow: hidden;
+}
+
+.calendar-layout .calendar-cell strong {
+  font-size: 12px;
+}
+
+.calendar-events-panel {
+  display: flex;
+  flex-direction: column;
+  height: 680px;
+}
+
+.calendar-events-panel .list-stack {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.calendar-event-item {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.calendar-event-item .button-row {
+  justify-content: flex-start;
+}
+
+@media (max-width: 1100px) {
+  .calendar-layout {
+    grid-template-columns: 1fr;
+  }
 }
 
 .budget-numbers {
@@ -1668,10 +1740,12 @@ button:disabled {
   width: min(100%, 560px);
   max-height: min(90vh, 820px);
   overflow: hidden;
-  border: 1px solid var(--border);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius);
-  background: var(--surface);
-  box-shadow: 0 22px 70px rgba(15, 23, 42, 0.22);
+  background: rgba(255, 255, 255, 0.72);
+  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(24px);
+  box-shadow: 0 22px 70px rgba(15, 23, 42, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
 .modal-header,
@@ -1839,9 +1913,9 @@ button:disabled {
   grid-template-columns: 8px minmax(0, 1fr) auto;
   align-items: start;
   gap: 12px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--glass-border);
   border-radius: var(--card-radius);
-  background: var(--surface);
+  background: rgba(255, 255, 255, 0.5);
   padding: 13px;
 }
 

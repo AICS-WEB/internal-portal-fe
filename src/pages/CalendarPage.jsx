@@ -53,6 +53,7 @@ export default function CalendarPage({ data, actions }) {
         }
       />
 
+      <div className="calendar-layout">
       <section className="calendar-panel">
         <div className="calendar-weekdays">
           {weekdays.map((day) => (
@@ -80,11 +81,11 @@ export default function CalendarPage({ data, actions }) {
         </div>
       </section>
 
-      <section className="panel">
+      <section className="panel calendar-events-panel">
         <SectionHeader title="일정 목록" />
         <div className="list-stack">
           {data.calendarEvents.map((event) => (
-            <article key={event.id} className="list-item roomy">
+            <article key={event.id} className="list-item roomy calendar-event-item">
               <div>
                 <div className="inline-gap">
                   <Badge value={event.event_type} />
@@ -113,6 +114,7 @@ export default function CalendarPage({ data, actions }) {
           ))}
         </div>
       </section>
+      </div>
 
       {recurringDraft ? (
         <RecurringEventModal

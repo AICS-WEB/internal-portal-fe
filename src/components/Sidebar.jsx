@@ -1,62 +1,109 @@
-const menuItems = [
-  { id: "dashboard", label: "Dashboard", group: "Portal" },
-  { id: "notices", label: "Notices", group: "Portal" },
-  { id: "calendar", label: "Calendar", group: "Portal" },
-  { id: "attendance", label: "Attendance", group: "Operations" },
-  { id: "leave", label: "Leave", group: "Operations" },
-  { id: "projects", label: "Projects", group: "Research" },
-  { id: "publications", label: "Publications", group: "Research" },
-  { id: "files", label: "Files", group: "Resources" },
-  { id: "purchases", label: "Purchases", group: "Operations" },
-  { id: "budget", label: "Budget", group: "Operations" },
-  { id: "credentials", label: "Credentials", group: "Resources" },
-  { id: "admin", label: "Admin", group: "Admin" },
-  { id: "mypage", label: "My Page", group: "Admin" },
+const menuGroups = [
+  {
+    label: "HOME",
+    items: [
+      { id: "dashboard", label: "Dashboard", icon: "⌂" },
+      { id: "notifications", label: "Notifications", icon: "◉", badge: "notifications" },
+      { id: "search", label: "Search", icon: "⌕" },
+    ],
+  },
+  {
+    label: "LAB",
+    items: [
+      { id: "notices", label: "Notices", icon: "▤" },
+      { id: "calendar", label: "Calendar", icon: "□" },
+      { id: "attendance", label: "Attendance", icon: "◷" },
+      { id: "leave", label: "Leave", icon: "△" },
+    ],
+  },
+  {
+    label: "RESEARCH",
+    items: [
+      { id: "publications", label: "Publications", icon: "≡" },
+      { id: "files", label: "Files", icon: "▱" },
+    ],
+  },
+  {
+    label: "OPERATIONS",
+    items: [
+      { id: "purchases", label: "Purchases", icon: "◎" },
+      { id: "budget", label: "Budget", icon: "₩" },
+      { id: "credentials", label: "Credentials", icon: "◆" },
+    ],
+  },
+  {
+    label: "ADMIN",
+    items: [
+      { id: "applications", label: "Applications", icon: "◇", minRole: "manager" },
+      { id: "admin", label: "Admin", icon: "⚙", minRole: "manager" },
+    ],
+  },
 ];
 
-const groupedItems = menuItems.reduce((acc, item) => {
-  acc[item.group] = acc[item.group] || [];
-  acc[item.group].push(item);
-  return acc;
-}, {});
+const roleRank = { member: 1, manager: 2, admin: 3 };
 
-export default function Sidebar({ activePage, onNavigate, isOpen, onClose, currentUser }) {
+function canSee(user, minRole) {
+  return !minRole || (roleRank[user?.role] || 0) >= roleRank[minRole];
+}
+
+export default function Sidebar({
+  activePage,
+  onNavigate,
+  isOpen,
+  onClose,
+  currentUser,
+  unreadCount = 0,
+  onLogout,
+}) {
   return (
     <>
       <aside className={`sidebar ${isOpen ? "open" : ""}`}>
-        <div className="sidebar-brand">
-          <div>
+        <button type="button" className="sidebar-brand" onClick={() => onNavigate("dashboard")}>
+          <span className="brand-mark">AI</span>
+          <span className="brand-copy">
             <strong>AICS Lab</strong>
-            <span>Internal Hub</span>
-          </div>
-        </div>
+            <small>Internal Portal</small>
+          </span>
+        </button>
 
         <nav className="sidebar-nav" aria-label="전체 메뉴">
-          {Object.entries(groupedItems).map(([group, items]) => (
-            <div className="sidebar-group" key={group}>
-              <span className="sidebar-group-label">{group}</span>
-              {items.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  className={activePage === item.id ? "active" : ""}
-                  onClick={() => {
-                    onNavigate(item.id);
-                    onClose();
-                  }}
-                >
-                  {item.label}
-                </button>
-              ))}
-            </div>
-          ))}
+          {menuGroups.map((group) => {
+            const visibleItems = group.items.filter((item) => canSee(currentUser, item.minRole));
+            if (!visibleItems.length) return null;
+            return (
+              <div className="sidebar-group" key={group.label}>
+                <span className="sidebar-group-label">{group.label}</span>
+                {visibleItems.map((item) => (
+                  <button
+                    key={item.id}
+                    type="button"
+                    className={activePage === item.id ? "active" : ""}
+                    onClick={() => {
+                      onNavigate(item.id);
+                      onClose();
+                    }}
+                  >
+                    <span className="nav-icon" aria-hidden="true">{item.icon}</span>
+                    <span>{item.label}</span>
+                    {item.badge === "notifications" && unreadCount ? <span className="nav-badge">{unreadCount}</span> : null}
+                  </button>
+                ))}
+              </div>
+            );
+          })}
         </nav>
 
         <div className="sidebar-user">
-          <div className="avatar">{currentUser.name.slice(0, 1)}</div>
-          <div>
-            <strong>{currentUser.name}</strong>
-            <span>{currentUser.role}</span>
+          <button type="button" className="sidebar-profile" onClick={() => onNavigate("mypage")}>
+            <span className="avatar">{String(currentUser?.name || "U").slice(0, 1)}</span>
+            <span className="user-copy">
+              <strong>{currentUser?.name || "사용자"}</strong>
+              <small>{currentUser?.role || "member"}</small>
+            </span>
+          </button>
+          <div className="sidebar-user-actions">
+            <button type="button" onClick={() => onNavigate("mypage")}>My Page</button>
+            <button type="button" onClick={onLogout}>Logout</button>
           </div>
         </div>
       </aside>

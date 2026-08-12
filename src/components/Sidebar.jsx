@@ -1,20 +1,39 @@
 import BrandMark from "./BrandMark.jsx";
+import { menuIcons } from "./icons.jsx";
 import { hasRole } from "../utils/permissions.js";
 
-const menuItems = [
-  { id: "dashboard", label: "Dashboard" },
-  { id: "notices", label: "Notices" },
-  { id: "calendar", label: "Calendar" },
-  { id: "attendance", label: "Attendance" },
-  { id: "leave", label: "Leave" },
-  { id: "projects", label: "Projects" },
-  { id: "publications", label: "Publications" },
-  { id: "files", label: "Files" },
-  { id: "purchases", label: "Purchases" },
-  { id: "budget", label: "Budget" },
-  { id: "credentials", label: "Credentials" },
-  { id: "admin", label: "Admin", minRole: "manager" },
-  { id: "mypage", label: "My Page" },
+const menuGroups = [
+  {
+    label: "개요",
+    items: [{ id: "dashboard", label: "Dashboard" }],
+  },
+  {
+    label: "업무",
+    items: [
+      { id: "notices", label: "Notices" },
+      { id: "calendar", label: "Calendar" },
+      { id: "attendance", label: "Attendance" },
+      { id: "leave", label: "Leave" },
+    ],
+  },
+  {
+    label: "연구",
+    items: [
+      { id: "projects", label: "Projects" },
+      { id: "publications", label: "Publications" },
+      { id: "files", label: "Files" },
+    ],
+  },
+  {
+    label: "운영",
+    items: [
+      { id: "purchases", label: "Purchases" },
+      { id: "budget", label: "Budget" },
+      { id: "credentials", label: "Credentials" },
+      { id: "admin", label: "Admin", minRole: "manager" },
+      { id: "mypage", label: "My Page" },
+    ],
+  },
 ];
 
 export default function Sidebar({ activePage, onNavigate, isOpen, onClose, currentUser }) {
@@ -30,19 +49,32 @@ export default function Sidebar({ activePage, onNavigate, isOpen, onClose, curre
         </div>
 
         <nav className="sidebar-nav" aria-label="주 메뉴">
-          {menuItems.filter((item) => !item.minRole || hasRole(currentUser, item.minRole)).map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              className={activePage === item.id ? "active" : ""}
-              onClick={() => {
-                onNavigate(item.id);
-                onClose();
-              }}
-            >
-              {item.label}
-            </button>
-          ))}
+          {menuGroups.map((group) => {
+            const items = group.items.filter((item) => !item.minRole || hasRole(currentUser, item.minRole));
+            if (!items.length) return null;
+            return (
+              <div key={group.label} className="sidebar-group">
+                <p className="sidebar-section-label">{group.label}</p>
+                {items.map((item) => {
+                  const Icon = menuIcons[item.id];
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className={activePage === item.id ? "active" : ""}
+                      onClick={() => {
+                        onNavigate(item.id);
+                        onClose();
+                      }}
+                    >
+                      <span className="nav-ico">{Icon ? <Icon /> : null}</span>
+                      {item.label}
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          })}
         </nav>
 
         <div className="sidebar-user">

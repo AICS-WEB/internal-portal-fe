@@ -43,11 +43,10 @@ import {
 } from "./api/portal.js";
 import Button from "./components/Button.jsx";
 import ConfirmModal from "./components/ConfirmModal.jsx";
-import Header from "./components/Header.jsx";
+import HrTopbar from "./components/HrTopbar.jsx";
 import Modal from "./components/Modal.jsx";
 import NotificationCenterModal from "./components/NotificationCenterModal.jsx";
 import PublicationFilesModal from "./components/PublicationFilesModal.jsx";
-import Sidebar from "./components/Sidebar.jsx";
 import Toast from "./components/Toast.jsx";
 import AttendancePage from "./pages/AttendancePage.jsx";
 import AdminPage from "./pages/AdminPage.jsx";
@@ -1197,36 +1196,31 @@ export default function App() {
   }
 
   return (
-    <div className="app-shell">
-      <Sidebar
-        activePage={activePage}
-        currentUser={currentUser}
-        isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-        onNavigate={setActivePage}
-      />
-
-      <main className="main-shell">
-        <Header
-          title={activeMeta.title}
-          searchValue={globalSearch}
-          onSearchChange={setGlobalSearch}
+    <div className="hr-page">
+      <div className="hr-frame">
+        <HrTopbar
+          activePage={activePage}
+          onNavigate={setActivePage}
           currentUser={currentUser}
           notifications={data.notifications}
-          onMenuClick={() => setSidebarOpen(true)}
-          onQuickCreate={openCreate}
           onShowNotifications={showNotifications}
-          onProfileClick={() => setActivePage("mypage")}
-          onLogoutClick={handleLogout}
+          onProfile={() => setActivePage("mypage")}
+          onLogout={handleLogout}
         />
-        <div className="content-area">
-          {loading ? (
-            <section className="panel"><p>실제 API 데이터를 불러오는 중입니다...</p></section>
-          ) : (
+
+        {loading ? (
+          <div className="hr-placeholder glass">
+            <div className="title">불러오는 중…</div>
+            <div className="desc">실제 API 데이터를 불러오고 있습니다.</div>
+          </div>
+        ) : activePage === "dashboard" ? (
+          <DashboardPage data={data} currentUser={currentUser} actions={actions} globalSearch={globalSearch} />
+        ) : (
+          <div className="hr-embed">
             <ActivePage data={data} currentUser={currentUser} actions={actions} globalSearch={globalSearch} />
-          )}
-        </div>
-      </main>
+          </div>
+        )}
+      </div>
 
       {formModal ? <FormModal modal={formModal} onClose={() => setFormModal(null)} onSubmit={submitForm} submitting={formSubmitting} /> : null}
       {detailModal ? <DetailModal detail={detailModal} onClose={() => setDetailModal(null)} /> : null}

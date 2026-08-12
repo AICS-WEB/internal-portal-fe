@@ -32,7 +32,7 @@ const NAV = [
   { id: "dashboard", label: "대시보드" },
   { id: "notices", label: "공지" },
   { id: "calendar", label: "캘린더" },
-  { id: "attendance", label: "근태" },
+  { id: "attendance", label: "출결" },
   { id: "leave", label: "휴가" },
   { id: "projects", label: "과제" },
   { id: "publications", label: "논문" },

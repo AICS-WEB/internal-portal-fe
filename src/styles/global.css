@@ -2710,9 +2710,36 @@ button:disabled {
 /* ---- Card grid ---- */
 .hr-grid {
   display: grid;
-  grid-template-columns: 288px 1fr 1fr 288px;
+  grid-template-columns: 288px 1fr 288px;
+  grid-template-rows: 290px auto;
   gap: 14px;
   align-items: start;
+}
+
+.hr-area-emp {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.hr-area-benefits {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.hr-area-cal {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  align-self: stretch;
+}
+
+.hr-area-onboard {
+  grid-column: 3;
+  grid-row: 1;
+}
+
+.hr-area-tasks {
+  grid-column: 3;
+  grid-row: 2;
 }
 
 .hr-card {
@@ -3099,10 +3126,15 @@ button:disabled {
 
 /* Week calendar */
 .hr-cal {
-  grid-column: span 2;
+  display: flex;
+  flex-direction: column;
   box-sizing: border-box;
   border-radius: 26px;
   padding: 18px 22px 22px;
+}
+
+.hr-cal-grid {
+  flex: 1;
 }
 
 .hr-cal-head {
@@ -3239,6 +3271,55 @@ button:disabled {
 
 .hr-avatars span + span {
   margin-left: -9px;
+}
+
+/* Positioned event chips on the enlarged week grid */
+.hr-cal-ev {
+  position: absolute;
+  box-sizing: border-box;
+  min-height: 38px;
+  max-height: 42px;
+  overflow: hidden;
+  border-radius: 12px;
+  padding: 7px 10px;
+}
+
+.hr-cal-ev.light {
+  background: rgba(255, 255, 255, 0.72);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.85);
+  box-shadow: 0 4px 14px rgba(60, 85, 125, 0.1);
+}
+
+.hr-cal-ev.dark {
+  color: #fff;
+  background: rgba(24, 23, 20, 0.82);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow: 0 8px 20px rgba(26, 26, 24, 0.22);
+}
+
+.hr-cal-ev .ev-title {
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.hr-cal-ev .ev-sub {
+  font-size: 10.5px;
+  margin-top: 2px;
+}
+
+.hr-cal-ev.light .ev-sub {
+  color: var(--muted);
+}
+
+.hr-cal-ev.dark .ev-sub {
+  color: rgba(255, 255, 255, 0.6);
 }
 
 /* Tasks (dark card) */

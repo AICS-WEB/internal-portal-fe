@@ -1,19 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import { formatNumber, todayISO } from "../utils/format.js";
 
 const WEEK_LABELS = ["월", "화", "수", "목", "금", "토"];
-const DAY_SECONDS = 28800; // 8h work day
-
-// Static demo bars for the weekly-hours card (attendance has no per-day hours yet).
-const DEMO_BARS = [
-  { label: "일", h: 34, dim: true },
-  { label: "월", h: 96 },
-  { label: "화", h: 62 },
-  { label: "수", h: 104 },
-  { label: "목", h: 78 },
-  { label: "금", h: 132, hot: true },
-  { label: "토", h: 28, dim: true },
-];
+const HOURS = ["9:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"];
+const HOUR_START = 9;
+const HOUR_END = 18;
+const ROW_H = 44; // px per hour row
 
 // HR-only concepts (benefits) kept as handoff demo content.
 const BENEFITS = [
@@ -59,11 +51,6 @@ function pad(n) {
   return String(n).padStart(2, "0");
 }
 
-function fmtClock(sec) {
-  const s = Math.max(0, sec);
-  return `${pad(Math.floor(s / 3600))}:${pad(Math.floor(s / 60) % 60)}`;
-}
-
 function toDate(iso) {
   const d = new Date(iso);
   return Number.isNaN(d.getTime()) ? null : d;
@@ -73,42 +60,6 @@ function eventTimeLabel(event) {
   const d = toDate(event.start_datetime);
   if (!d) return event.location || "";
   return `${d.getMonth() + 1}월 ${d.getDate()}일 ${pad(d.getHours())}:${pad(d.getMinutes())}`;
-}
-
-function TimeTracker({ seedSeconds, seedRunning }) {
-  const [sec, setSec] = useState(seedSeconds);
-  const [running, setRunning] = useState(seedRunning);
-
-  useEffect(() => {
-    if (!running) return undefined;
-    const id = window.setInterval(() => setSec((s) => s + 1), 1000);
-    return () => window.clearInterval(id);
-  }, [running]);
-
-  const deg = `${Math.round(((sec % DAY_SECONDS) / DAY_SECONDS) * 360)}deg`;
-
-  return (
-    <div className="hr-card glass hr-row1">
-      <div className="hr-card-head">
-        <div className="hr-card-title">타임 트래커</div>
-        <button type="button" className="hr-ico-btn" aria-label="열기">↗</button>
-      </div>
-      <div className="hr-tracker-ring-wrap">
-        <div className="hr-tracker-ring" style={{ background: `conic-gradient(#afccee ${deg}, #e6ecf3 0)` }} />
-        <div className="hr-tracker-disc">
-          <div className="hr-tracker-time">{fmtClock(sec)}</div>
-          <div className="hr-tracker-sub">업무 시간</div>
-        </div>
-      </div>
-      <div className="hr-tracker-controls">
-        <div style={{ display: "flex", gap: 8 }}>
-          <button type="button" className="hr-round-btn" onClick={() => setRunning(true)} aria-label="시작">▶</button>
-          <button type="button" className="hr-round-btn" onClick={() => setRunning(false)} aria-label="일시정지" style={{ letterSpacing: 2, fontSize: 12 }}>‖</button>
-        </div>
-        <button type="button" className="hr-round-btn dark" onClick={() => { setSec(0); setRunning(false); }} aria-label="초기화">↺</button>
-      </div>
-    </div>
-  );
 }
 
 export default function DashboardPage({ data, currentUser, actions }) {
@@ -136,16 +87,26 @@ export default function DashboardPage({ data, currentUser, actions }) {
 
   const monthLabel = weekDays.length ? `${weekDays[2].year}년 ${weekDays[2].month}월` : "";
 
-  const weekEvents = useMemo(() => {
-    const start = weekDays[0]?.iso;
-    const end = weekDays[weekDays.length - 1]?.iso;
+  // Events placed on the week grid (Mon–Sat, 9:00–18:00) by weekday column and start time.
+  const dayEvents = useMemo(() => {
     return data.calendarEvents
-      .filter((e) => {
+      .map((e) => {
         const day = e.start_datetime?.slice(0, 10);
-        return day && start && end && day >= start && day <= end;
+        const idx = weekDays.findIndex((d) => d.iso === day);
+        const dt = toDate(e.start_datetime);
+        if (idx < 0 || !dt) return null;
+        const hourFloat = dt.getHours() + dt.getMinutes() / 60;
+        if (hourFloat < HOUR_START || hourFloat >= HOUR_END) return null;
+        return {
+          id: e.id,
+          title: e.title,
+          type: e.event_type,
+          time: `${pad(dt.getHours())}:${pad(dt.getMinutes())}`,
+          idx,
+          top: (hourFloat - HOUR_START) * ROW_H,
+        };
       })
-      .sort((a, b) => String(a.start_datetime).localeCompare(String(b.start_datetime)))
-      .slice(0, 2);
+      .filter(Boolean);
   }, [data.calendarEvents, weekDays]);
 
   // Onboarding task list ← upcoming calendar events (fallback to demo).
@@ -158,22 +119,6 @@ export default function DashboardPage({ data, currentUser, actions }) {
     return upcoming.length ? upcoming : DEMO_TASKS.map((t, i) => ({ icon: TASK_ICONS[i], ...t }));
   }, [data.calendarEvents]);
 
-  // Time tracker seed from today's own attendance check-in when present.
-  const myToday = data.attendanceRecords.find((r) => r.date === today && r.user_id === currentUser.id);
-  const { seedSeconds, seedRunning } = useMemo(() => {
-    if (myToday?.check_in) {
-      const [h, m] = myToday.check_in.split(":").map(Number);
-      const startMin = h * 60 + m;
-      if (myToday.check_out) {
-        const [oh, om] = myToday.check_out.split(":").map(Number);
-        return { seedSeconds: Math.max(0, (oh * 60 + om - startMin) * 60), seedRunning: false };
-      }
-      const now = new Date();
-      return { seedSeconds: Math.max(0, (now.getHours() * 60 + now.getMinutes() - startMin) * 60), seedRunning: true };
-    }
-    return { seedSeconds: 9320, seedRunning: true };
-  }, [myToday]);
-
   const roleLabel = ROLE_LABELS[currentUser.role] || currentUser.role || "구성원";
   const doneCount = doneTasks.length;
 
@@ -183,7 +128,6 @@ export default function DashboardPage({ data, currentUser, actions }) {
         <div className="hr-greeting">
           <h1>안녕하세요, {currentUser.name}님</h1>
           <div className="hr-quick-wrap">
-            <div className="hr-metric-cap">빠른 실행</div>
             <div className="hr-quick">
               {QUICK_ACTIONS.map((action) => (
                 <button
@@ -216,7 +160,7 @@ export default function DashboardPage({ data, currentUser, actions }) {
 
       <div className="hr-grid">
         {/* Employee card ← current user */}
-        <div className="hr-emp-card">
+        <div className="hr-emp-card hr-area-emp">
           {currentUser.profile_image ? (
             <img className="hr-emp-photo" src={currentUser.profile_image} alt="" />
           ) : (
@@ -240,37 +184,8 @@ export default function DashboardPage({ data, currentUser, actions }) {
           </div>
         </div>
 
-        {/* Weekly hours (demo chart) */}
-        <div className="hr-card glass hr-row1">
-          <div className="hr-card-head">
-            <div className="hr-card-title">업무 시간</div>
-            <button type="button" className="hr-ico-btn" aria-label="열기">↗</button>
-          </div>
-          <div className="hr-hours-value">
-            <strong>6.1 h</strong>
-            <span>이번 주<br />누적 업무</span>
-          </div>
-          <div className="hr-bars">
-            {DEMO_BARS.map((b) => {
-              const color = b.hot ? "#afccee" : b.dim ? "#d5dfec" : "#1a1a18";
-              return (
-                <div key={b.label} className="hr-bar-col">
-                  <div className="hr-bar-track">
-                    <div className="hr-bar" style={{ height: b.h, background: color }} />
-                    <div className="hr-bar-dot" style={{ background: color }} />
-                  </div>
-                  <div className="hr-bar-label" style={{ color: b.hot ? "#5b82b4" : "#8a867c" }}>{b.label}</div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Time tracker ← today's attendance */}
-        <TimeTracker seedSeconds={seedSeconds} seedRunning={seedRunning} />
-
         {/* Onboarding (demo) */}
-        <div className="hr-card glass hr-row1">
+        <div className="hr-card glass hr-row1 hr-area-onboard">
           <div className="hr-card-head" style={{ alignItems: "baseline" }}>
             <div className="hr-card-title">온보딩</div>
             <div className="hr-onboard-pct">18%</div>
@@ -297,7 +212,7 @@ export default function DashboardPage({ data, currentUser, actions }) {
         </div>
 
         {/* Benefits accordion (demo) */}
-        <div className="hr-accordion glass">
+        <div className="hr-accordion glass hr-area-benefits">
           {BENEFITS.map((row, i) => {
             const open = openAcc === i;
             return (
@@ -325,8 +240,8 @@ export default function DashboardPage({ data, currentUser, actions }) {
           })}
         </div>
 
-        {/* Week calendar ← real calendarEvents */}
-        <div className="hr-cal glass">
+        {/* Week calendar ← real calendarEvents, 9:00–18:00 */}
+        <div className="hr-cal glass hr-area-cal">
           <div className="hr-cal-head">
             <div className="hr-cal-pill">{monthLabel ? `${weekDays[2].month - 1 || 12}월` : "이전"}</div>
             <div className="hr-cal-month">{monthLabel}</div>
@@ -342,42 +257,32 @@ export default function DashboardPage({ data, currentUser, actions }) {
             ))}
           </div>
           <div className="hr-cal-grid">
-            {["8:00", "9:00", "10:00", "11:00"].map((h) => (
+            {HOURS.map((h) => (
               <div key={h} className="hr-cal-hour">
                 <div className="label">{h}</div>
                 <div className="rule" />
               </div>
             ))}
-            {weekEvents[0] ? (
-              <div className="hr-cal-event dark" style={{ top: 44, left: "26%", width: "40%" }}>
-                <div>
-                  <div className="ev-title">{weekEvents[0].title}</div>
-                  <div className="ev-sub">{eventTimeLabel(weekEvents[0])}</div>
-                </div>
-                <div className="hr-avatars">
-                  <span style={{ background: "#8fb3dc", border: "2px solid #1a1a18" }} />
-                  <span style={{ background: "#8a867c", border: "2px solid #1a1a18" }} />
-                  <span style={{ background: "#dce5f0", border: "2px solid #1a1a18" }} />
-                </div>
+            {dayEvents.map((ev) => (
+              <div
+                key={ev.id}
+                className={`hr-cal-ev ${ev.type === "meeting" || ev.type === "deadline" ? "dark" : "light"}`}
+                style={{
+                  top: ev.top,
+                  left: `calc(66px + ${ev.idx} * ((100% - 66px) / 6) + 3px)`,
+                  width: "calc((100% - 66px) / 6 - 6px)",
+                }}
+                title={`${ev.title} · ${ev.time}`}
+              >
+                <div className="ev-title">{ev.title}</div>
+                <div className="ev-sub">{ev.time}</div>
               </div>
-            ) : null}
-            {weekEvents[1] ? (
-              <div className="hr-cal-event light" style={{ top: 132, left: "48%", width: "38%" }}>
-                <div>
-                  <div className="ev-title">{weekEvents[1].title}</div>
-                  <div className="ev-sub">{eventTimeLabel(weekEvents[1])}</div>
-                </div>
-                <div className="hr-avatars">
-                  <span style={{ background: "#dce5f0", border: "2px solid #fff" }} />
-                  <span style={{ background: "#8fb3dc", border: "2px solid #fff" }} />
-                </div>
-              </div>
-            ) : null}
+            ))}
           </div>
         </div>
 
         {/* Tasks ← upcoming events */}
-        <div className="hr-tasks">
+        <div className="hr-tasks hr-area-tasks">
           <div className="hr-tasks-head">
             <div className="title">온보딩 과제</div>
             <div className="hr-tasks-count">{doneCount}<span className="den">/{taskItems.length}</span></div>

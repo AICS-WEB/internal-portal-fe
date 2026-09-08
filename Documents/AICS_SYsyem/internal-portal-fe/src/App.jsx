@@ -1312,9 +1312,12 @@ export default function App() {
         />
         <div className="content-area">
           {loading ? (
-            <section className="panel"><p>실제 API 데이터를 불러오는 중입니다...</p></section>
+            <section className="panel loading-panel">
+              <span className="ai-loader" aria-hidden="true" />
+              <p>실제 API 데이터를 불러오는 중입니다...</p>
+            </section>
           ) : (
-            <ActivePage data={data} currentUser={currentUser} actions={actions} globalSearch={globalSearch} />
+            <ActivePage key={activePage} data={data} currentUser={currentUser} actions={actions} globalSearch={globalSearch} />
           )}
         </div>
       </main>

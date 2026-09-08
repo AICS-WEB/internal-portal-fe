@@ -2666,6 +2666,188 @@ body::after { bottom: 4%; left: 18%; background: #7b61ff; }
 .quick-menu button { color: #eeeeee; }
 .quick-menu button:hover { background: rgba(123, 97, 255, 0.18); }
 
+/* Space / AI motion layer */
+.app-shell {
+  position: relative;
+  overflow: hidden;
+}
+
+.app-shell::before {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background-image:
+    radial-gradient(circle at 12% 18%, rgba(255, 255, 255, 0.7) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 64% 24%, rgba(151, 226, 255, 0.62) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 84% 72%, rgba(255, 255, 255, 0.55) 0 1px, transparent 1.5px),
+    radial-gradient(circle at 38% 90%, rgba(181, 161, 255, 0.5) 0 1px, transparent 1.5px);
+  background-size: 190px 220px, 260px 280px, 310px 260px, 240px 300px;
+  content: "";
+  opacity: 0.42;
+  pointer-events: none;
+  animation: star-drift 22s linear infinite;
+}
+
+.content-area {
+  position: relative;
+}
+
+.page-stack {
+  animation: page-arrival 0.42s ease both;
+}
+
+.panel,
+.stat-card,
+.quick-action-band,
+.toolbar-panel,
+.calendar-panel,
+.project-card,
+.budget-card,
+.profile-card,
+.mini-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.panel::after,
+.stat-card::after,
+.quick-action-band::after,
+.toolbar-panel::after,
+.calendar-panel::after,
+.project-card::after,
+.budget-card::after,
+.profile-card::after,
+.mini-card::after {
+  position: absolute;
+  top: 0;
+  left: -42%;
+  width: 34%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(159, 226, 255, 0.85), transparent);
+  content: "";
+  opacity: 0.55;
+  pointer-events: none;
+  animation: glass-scan 8s ease-in-out infinite;
+}
+
+.btn {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  transition:
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    background 0.18s ease,
+    border-color 0.18s ease,
+    color 0.18s ease;
+}
+
+.btn::before {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 0;
+  height: 0;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.22);
+  content: "";
+  transform: translate(-50%, -50%);
+  transition: width 0.35s ease, height 0.35s ease;
+  z-index: -1;
+}
+
+.btn:hover {
+  box-shadow: 0 0 18px rgba(123, 97, 255, 0.34), 0 0 3px rgba(188, 174, 255, 0.7);
+  transform: translateY(-1px);
+}
+
+.btn:active {
+  box-shadow: 0 0 10px rgba(123, 97, 255, 0.5);
+  transform: translateY(1px) scale(0.98);
+}
+
+.btn:active::before {
+  width: 180px;
+  height: 180px;
+}
+
+.sidebar-nav button {
+  transition: color 0.2s ease, background 0.2s ease, border-color 0.2s ease, transform 0.2s ease;
+}
+
+.sidebar-nav button:hover {
+  box-shadow: inset 3px 0 0 var(--primary), 0 0 14px rgba(123, 97, 255, 0.16);
+  transform: translateX(3px);
+}
+
+.sidebar-nav button.active {
+  box-shadow: inset 3px 0 0 #b7aaff, 0 0 20px rgba(123, 97, 255, 0.24);
+}
+
+.ai-loader {
+  display: block;
+  width: 34px;
+  height: 34px;
+  margin: 0 auto 12px;
+  border: 2px solid rgba(123, 97, 255, 0.22);
+  border-top-color: #a99aff;
+  border-right-color: #5ce1d0;
+  border-radius: 50%;
+  box-shadow: 0 0 18px rgba(123, 97, 255, 0.34);
+  animation: orbit-spin 0.9s linear infinite;
+}
+
+.loading-panel {
+  padding: 42px 18px;
+  text-align: center;
+}
+
+.notification-item,
+.list-item,
+.calendar-events button {
+  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.notification-item:hover,
+.list-item:hover,
+.calendar-events button:hover {
+  border-color: rgba(123, 97, 255, 0.52);
+  box-shadow: 0 0 20px rgba(123, 97, 255, 0.14);
+  transform: translateY(-2px);
+}
+
+@keyframes page-arrival {
+  from { opacity: 0; transform: translateY(8px); filter: blur(3px); }
+  to { opacity: 1; transform: translateY(0); filter: blur(0); }
+}
+
+@keyframes star-drift {
+  from { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(-8px, 10px, 0); }
+  to { transform: translate3d(0, 0, 0); }
+}
+
+@keyframes glass-scan {
+  0%, 20% { left: -42%; opacity: 0; }
+  38%, 62% { opacity: 0.6; }
+  80%, 100% { left: 108%; opacity: 0; }
+}
+
+@keyframes orbit-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 .calendar-panel {
   border-color: rgba(214, 222, 232, 0.18);
   background: rgba(15, 28, 40, 0.72);

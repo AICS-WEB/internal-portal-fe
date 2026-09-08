@@ -70,7 +70,7 @@ export default function LoginPage({ onLogin, onRegister }) {
             <BrandMark />
             <span>
               <strong>AICS Lab Hub</strong>
-              <small>내부 포털</small>
+              <small>Internal Portal</small>
             </span>
           </div>
           <div className="auth-visual-copy">

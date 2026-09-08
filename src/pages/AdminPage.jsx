@@ -1,7 +1,6 @@
 import Button from "../components/Button.jsx";
 import DataTable from "../components/DataTable.jsx";
 import SectionHeader from "../components/SectionHeader.jsx";
-import { formatDate, formatLabel } from "../utils/format.js";
 
 export default function AdminPage({ data, currentUser, actions }) {
   const pendingUsers = data.users.filter((user) => user.account_status === "pending");
@@ -18,7 +17,7 @@ export default function AdminPage({ data, currentUser, actions }) {
     },
     { key: "student_id", header: "학번" },
     { key: "department", header: "학과" },
-    { key: "program", header: "과정", render: (user) => formatLabel(user.program) },
+    { key: "program", header: "과정" },
     { key: "enrollment_year", header: "입학년도" },
     {
       key: "actions",
@@ -55,9 +54,9 @@ export default function AdminPage({ data, currentUser, actions }) {
           disabled={Number(user.id) === Number(currentUser.id)}
           onChange={(event) => actions.updateItem("users", user.id, { role: event.target.value })}
         >
-          <option value="member">일반 구성원</option>
-          <option value="manager">관리자</option>
-          <option value="admin">최고 관리자</option>
+          <option value="member">member</option>
+          <option value="manager">manager</option>
+          <option value="admin">admin</option>
         </select>
       ),
     },
@@ -71,19 +70,19 @@ export default function AdminPage({ data, currentUser, actions }) {
           disabled={Number(user.id) === Number(currentUser.id)}
           onChange={(event) => actions.updateItem("users", user.id, { account_status: event.target.value })}
         >
-          <option value="pending">승인 대기</option>
-          <option value="approved">활성</option>
-          <option value="rejected">가입 반려</option>
-          <option value="deactivated">비활성</option>
+          <option value="pending">pending</option>
+          <option value="approved">approved</option>
+          <option value="rejected">rejected</option>
+          <option value="deactivated">deactivated</option>
         </select>
       ),
     },
-    { key: "last_login_at", header: "최근 로그인", render: (user) => formatDate(user.last_login_at) },
+    { key: "last_login_at", header: "최근 로그인" },
   ];
 
   return (
     <div className="page-stack">
-      <SectionHeader title="사용자 관리" description="가입 승인, 사용자 역할과 계정 상태를 관리합니다." />
+      <SectionHeader title="Admin" description="가입 승인, 사용자 역할과 계정 상태를 관리합니다." />
       <section className="panel">
         <SectionHeader title="사용자 승인 대기" />
         <DataTable columns={pendingColumns} rows={pendingUsers} emptyTitle="승인 대기 중인 사용자가 없습니다." />

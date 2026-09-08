@@ -4,7 +4,6 @@ import Button from "../components/Button.jsx";
 import DataTable from "../components/DataTable.jsx";
 import FilterTabs from "../components/FilterTabs.jsx";
 import SectionHeader from "../components/SectionHeader.jsx";
-import { formatLabel } from "../utils/format.js";
 
 const statusOptions = [
   { value: "all", label: "전체" },
@@ -41,7 +40,7 @@ export default function PublicationsPage({ data, actions }) {
     },
     { key: "year", header: "연도" },
     { key: "venue", header: "게재지" },
-    { key: "pub_type", header: "유형", render: (item) => formatLabel(item.pub_type) },
+    { key: "pub_type", header: "유형" },
     { key: "status", header: "상태", render: (item) => <Badge value={item.status} /> },
     { key: "is_public", header: "공개", render: (item) => <Badge value={item.is_public ? "public" : "private"} /> },
     {
@@ -72,7 +71,7 @@ export default function PublicationsPage({ data, actions }) {
   return (
     <div className="page-stack">
       <SectionHeader
-        title="논문"
+        title="Publications"
         description="논문과 연구 성과의 상태, 공개 여부를 관리합니다."
         actions={
           <Button variant="primary" onClick={() => actions.openCreate("publications")}>

@@ -3,7 +3,6 @@ import { hasRole } from "../utils/permissions.js";
 import Badge from "./Badge.jsx";
 import Button from "./Button.jsx";
 import Modal from "./Modal.jsx";
-import { formatDate, formatLabel } from "../utils/format.js";
 
 const notificationTypes = ["general", "notice_created", "leave_requested", "purchase_requested"];
 
@@ -104,7 +103,7 @@ export default function NotificationCenterModal({
             <label className="field">
               <span>알림 유형</span>
               <select value={compose.type} onChange={(event) => setCompose((value) => ({ ...value, type: event.target.value }))}>
-                {notificationTypes.map((type) => <option key={type} value={type}>{formatLabel(type)}</option>)}
+                {notificationTypes.map((type) => <option key={type} value={type}>{type}</option>)}
               </select>
             </label>
             <label className="field">
@@ -128,7 +127,7 @@ export default function NotificationCenterModal({
             <div>
               <strong>{notification.title}</strong>
               <p>{notification.message}</p>
-              <small>{formatDate(notification.created_at)}</small>
+              <small>{notification.created_at}</small>
             </div>
             {!notification.read ? (
               <Button size="sm" variant="ghost" disabled={readingId === notification.id} onClick={() => readNotification(notification.id)}>

@@ -5,7 +5,6 @@ import DataTable from "../components/DataTable.jsx";
 import FilterTabs from "../components/FilterTabs.jsx";
 import SectionHeader from "../components/SectionHeader.jsx";
 import StatCard from "../components/StatCard.jsx";
-import { formatLabel } from "../utils/format.js";
 import { hasRole } from "../utils/permissions.js";
 
 const statusOptions = [
@@ -49,7 +48,7 @@ export default function LeavePage({ data, currentUser, actions }) {
     { key: "user_name", header: "신청자" },
     { key: "leave_type", header: "유형", render: (request) => <Badge value={request.leave_type} /> },
     { key: "period", header: "기간", render: (request) => `${request.start_date} - ${request.end_date}` },
-    { key: "half_period", header: "반차 시간", render: (request) => request.leave_type === "half" ? formatLabel(request.half_period) : "해당 없음" },
+    { key: "half_period", header: "반차" },
     { key: "reason", header: "사유" },
     { key: "status", header: "상태", render: (request) => <Badge value={request.status} /> },
     {
@@ -87,7 +86,7 @@ export default function LeavePage({ data, currentUser, actions }) {
   return (
     <div className="page-stack">
       <SectionHeader
-        title="휴가 관리"
+        title="Leave"
         description="휴가 잔여일과 신청 상태를 관리합니다."
         actions={
           <Button variant="primary" onClick={() => actions.openCreate("leaveRequests")}>

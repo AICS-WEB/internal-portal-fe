@@ -40,8 +40,8 @@ const NAV = [
   { id: "purchases", label: "구매" },
   { id: "budget", label: "예산" },
   { id: "credentials", label: "계정" },
-  { id: "admin", label: "사용자 관리", minRole: "manager" },
-  { id: "mypage", label: "내 정보" },
+  { id: "admin", label: "관리", minRole: "manager" },
+  { id: "mypage", label: "마이" },
 ];
 
 export default function HrTopbar({

@@ -1,13 +1,12 @@
 import Badge from "../components/Badge.jsx";
 import Button from "../components/Button.jsx";
 import SectionHeader from "../components/SectionHeader.jsx";
-import { formatLabel } from "../utils/format.js";
 
 export default function MyPage({ currentUser, actions }) {
   return (
     <div className="page-stack">
       <SectionHeader
-        title="내 정보"
+        title="My Page"
         description="내 프로필과 공개 여부를 관리합니다."
         actions={
           <>
@@ -35,44 +34,44 @@ export default function MyPage({ currentUser, actions }) {
           <SectionHeader title="프로필 정보" />
           <dl className="detail-grid">
             <div>
-              <dt>학번</dt>
-              <dd>{currentUser.student_id || "-"}</dd>
+              <dt>student_id</dt>
+              <dd>{currentUser.student_id}</dd>
             </div>
             <div>
-              <dt>소속</dt>
-              <dd>{currentUser.department || "-"}</dd>
+              <dt>department</dt>
+              <dd>{currentUser.department}</dd>
             </div>
             <div>
-              <dt>과정</dt>
-              <dd>{formatLabel(currentUser.program)}</dd>
+              <dt>program</dt>
+              <dd>{currentUser.program}</dd>
             </div>
             <div>
-              <dt>입학 연도</dt>
-              <dd>{currentUser.enrollment_year || "-"}</dd>
+              <dt>enrollment_year</dt>
+              <dd>{currentUser.enrollment_year}</dd>
             </div>
             <div>
-              <dt>연구 주제</dt>
-              <dd>{currentUser.research_topic || "-"}</dd>
+              <dt>research_topic</dt>
+              <dd>{currentUser.research_topic}</dd>
             </div>
             <div>
-              <dt>GitHub 주소</dt>
+              <dt>github_url</dt>
               <dd>{currentUser.github_url || "-"}</dd>
             </div>
             <div>
-              <dt>LinkedIn 주소</dt>
+              <dt>linkedin_url</dt>
               <dd>{currentUser.linkedin_url || "-"}</dd>
             </div>
             <div>
-              <dt>연락처</dt>
+              <dt>phone</dt>
               <dd>{currentUser.phone || "-"}</dd>
             </div>
             <div>
-              <dt>선호 언어</dt>
-              <dd>{formatLabel(currentUser.preferred_language || "ko")}</dd>
+              <dt>preferred_language</dt>
+              <dd>{currentUser.preferred_language || "ko"}</dd>
             </div>
           </dl>
-          <p className="muted-note">연락처는 연구실 내부 연락에만 사용됩니다.</p>
-          <p className="profile-bio">{formatLabel(currentUser.bio, "등록된 소개가 없습니다.")}</p>
+          <p className="muted-note">phone은 연구실 내부 연락을 위한 전용 정보입니다.</p>
+          <p className="profile-bio">{currentUser.bio || "등록된 소개가 없습니다."}</p>
         </article>
       </section>
     </div>

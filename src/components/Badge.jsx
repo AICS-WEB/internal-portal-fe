@@ -1,4 +1,54 @@
-import { formatLabel } from "../utils/format.js";
+const labelMap = {
+  general: "일반",
+  important: "중요",
+  account_info: "계정",
+  schedule: "일정",
+  meeting: "미팅",
+  deadline: "마감",
+  event: "행사",
+  trip: "출장",
+  other: "기타",
+  shared: "공유",
+  personal: "개인",
+  present: "출석",
+  absent: "결석",
+  leave: "휴가",
+  half_leave: "반차",
+  pending: "대기",
+  approved: "승인",
+  rejected: "반려",
+  deactivated: "비활성",
+  purchased: "구매 완료",
+  delivered: "입고 완료",
+  active: "진행",
+  closed: "종료",
+  watch: "주의",
+  writing: "작성 중",
+  submitted: "제출",
+  under_review: "심사 중",
+  accepted: "채택",
+  published: "출판",
+  paper: "논문",
+  presentation: "발표",
+  template: "템플릿",
+  software: "소프트웨어",
+  member: "Member",
+  manager: "Manager",
+  admin: "Admin",
+  research: "연구비",
+  operation: "운영비",
+  conference: "학회",
+  equipment: "장비",
+  office: "사무",
+  infra: "인프라",
+  billing: "결제",
+  library: "라이브러리",
+  annual: "연차",
+  half_day: "반차",
+  sick: "병가",
+  public: "공개",
+  private: "비공개",
+};
 
 const toneMap = {
   important: "danger",
@@ -27,5 +77,5 @@ export default function Badge({ value, children, tone }) {
   const key = String(value || "").toLowerCase();
   const badgeTone = tone || toneMap[key] || "neutral";
 
-  return <span className={`badge badge-${badgeTone}`}>{children || formatLabel(value)}</span>;
+  return <span className={`badge badge-${badgeTone}`}>{children || labelMap[key] || value}</span>;
 }

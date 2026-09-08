@@ -44,7 +44,7 @@ export default function BudgetPage({ data, currentUser, actions }) {
   return (
     <div className="page-stack">
       <SectionHeader
-        title="예산"
+        title="Budget"
         description="예산 사용 현황과 지출 승인 상태를 확인합니다."
         actions={
           <>

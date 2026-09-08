@@ -1,38 +1,37 @@
 import BrandMark from "./BrandMark.jsx";
 import { menuIcons } from "./icons.jsx";
-import { formatLabel } from "../utils/format.js";
 import { hasRole } from "../utils/permissions.js";
 
 const menuGroups = [
   {
     label: "개요",
-    items: [{ id: "dashboard", label: "대시보드" }],
+    items: [{ id: "dashboard", label: "Dashboard" }],
   },
   {
     label: "업무",
     items: [
-      { id: "notices", label: "공지사항" },
-      { id: "calendar", label: "캘린더" },
-      { id: "attendance", label: "출결" },
-      { id: "leave", label: "휴가" },
+      { id: "notices", label: "Notices" },
+      { id: "calendar", label: "Calendar" },
+      { id: "attendance", label: "Attendance" },
+      { id: "leave", label: "Leave" },
     ],
   },
   {
     label: "연구",
     items: [
-      { id: "projects", label: "연구과제" },
-      { id: "publications", label: "논문" },
-      { id: "files", label: "자료" },
+      { id: "projects", label: "Projects" },
+      { id: "publications", label: "Publications" },
+      { id: "files", label: "Files" },
     ],
   },
   {
     label: "운영",
     items: [
-      { id: "purchases", label: "구매 신청" },
-      { id: "budget", label: "예산" },
-      { id: "credentials", label: "공용 계정" },
-      { id: "admin", label: "사용자 관리", minRole: "manager" },
-      { id: "mypage", label: "내 정보" },
+      { id: "purchases", label: "Purchases" },
+      { id: "budget", label: "Budget" },
+      { id: "credentials", label: "Credentials" },
+      { id: "admin", label: "Admin", minRole: "manager" },
+      { id: "mypage", label: "My Page" },
     ],
   },
 ];
@@ -45,7 +44,7 @@ export default function Sidebar({ activePage, onNavigate, isOpen, onClose, curre
           <BrandMark />
           <div>
             <strong>AICS Lab Hub</strong>
-            <span>내부 포털</span>
+            <span>Internal Portal</span>
           </div>
         </div>
 
@@ -82,7 +81,7 @@ export default function Sidebar({ activePage, onNavigate, isOpen, onClose, curre
           <div className="avatar">{currentUser.name.slice(0, 1)}</div>
           <div>
             <strong>{currentUser.name}</strong>
-            <span>{formatLabel(currentUser.role)}</span>
+            <span>{currentUser.role}</span>
           </div>
         </div>
       </aside>

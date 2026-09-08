@@ -73,7 +73,7 @@ export default function PurchasesPage({ data, currentUser, actions }) {
   return (
     <div className="page-stack">
       <SectionHeader
-        title="구매 신청"
+        title="Purchases"
         description="물품 구매 요청의 승인, 구매, 입고 상태를 관리합니다."
         actions={
           <Button variant="primary" onClick={() => actions.openCreate("purchaseRequests")}>

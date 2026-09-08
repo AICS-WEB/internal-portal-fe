@@ -49,7 +49,7 @@ export default function ResetPasswordPage({ onBackToLogin }) {
             <BrandMark />
             <span>
               <strong>AICS Lab Hub</strong>
-              <small>Internal Portal</small>
+              <small>내부 포털</small>
             </span>
           </div>
           <div className="auth-visual-copy">

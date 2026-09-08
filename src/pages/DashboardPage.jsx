@@ -36,7 +36,7 @@ const DEMO_TASKS = [
   { title: "인사 규정 검토", time: "9월 13일, 16:30" },
 ];
 
-const ROLE_LABELS = { member: "구성원", manager: "매니저", admin: "관리자" };
+const ROLE_LABELS = { member: "일반 구성원", manager: "관리자", admin: "최고 관리자" };
 
 // Quick-create shortcuts (replaces the decorative metric bars in the greeting row).
 const QUICK_ACTIONS = [

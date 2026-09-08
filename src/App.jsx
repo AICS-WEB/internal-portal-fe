@@ -64,23 +64,23 @@ import PublicationsPage from "./pages/PublicationsPage.jsx";
 import PurchasesPage from "./pages/PurchasesPage.jsx";
 import RegisterPage from "./pages/RegisterPage.jsx";
 import ResetPasswordPage from "./pages/ResetPasswordPage.jsx";
-import { todayISO } from "./utils/format.js";
+import { formatDate, formatLabel, todayISO } from "./utils/format.js";
 import { canAccess, hasRole } from "./utils/permissions.js";
 
 const pageRegistry = {
-  dashboard: { title: "Dashboard", component: DashboardPage },
-  notices: { title: "Notices", component: NoticesPage },
-  calendar: { title: "Calendar", component: CalendarPage },
-  attendance: { title: "Attendance", component: AttendancePage },
-  leave: { title: "Leave", component: LeavePage },
-  projects: { title: "Projects", component: ProjectsPage },
-  publications: { title: "Publications", component: PublicationsPage },
-  files: { title: "Files", component: FilesPage },
-  purchases: { title: "Purchases", component: PurchasesPage },
-  budget: { title: "Budget", component: BudgetPage },
-  credentials: { title: "Credentials", component: CredentialsPage },
-  admin: { title: "Admin", component: AdminPage },
-  mypage: { title: "My Page", component: MyPage },
+  dashboard: { title: "대시보드", component: DashboardPage },
+  notices: { title: "공지사항", component: NoticesPage },
+  calendar: { title: "캘린더", component: CalendarPage },
+  attendance: { title: "출결", component: AttendancePage },
+  leave: { title: "휴가", component: LeavePage },
+  projects: { title: "연구과제", component: ProjectsPage },
+  publications: { title: "논문", component: PublicationsPage },
+  files: { title: "자료", component: FilesPage },
+  purchases: { title: "구매 신청", component: PurchasesPage },
+  budget: { title: "예산", component: BudgetPage },
+  credentials: { title: "공용 계정", component: CredentialsPage },
+  admin: { title: "사용자 관리", component: AdminPage },
+  mypage: { title: "내 정보", component: MyPage },
 };
 
 const initialData = {
@@ -108,7 +108,7 @@ function uid(prefix) {
   return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 }
 
-function option(value, label = value) {
+function option(value, label = formatLabel(value)) {
   return { value, label };
 }
 
@@ -134,7 +134,7 @@ function buildResourceConfigs(currentUser, data) {
           label: "첨부파일",
           type: "file",
           multiple: true,
-          help: "선택한 파일은 Supabase Storage에 업로드된 뒤 공지 첨부로 저장됩니다.",
+          help: "선택한 파일은 파일 저장소에 업로드된 뒤 공지 첨부로 저장됩니다.",
         },
         { name: "is_pinned", label: "is_pinned", type: "checkbox" },
       ],
@@ -242,7 +242,7 @@ function buildResourceConfigs(currentUser, data) {
           label: "논문 첨부파일",
           type: "file",
           multiple: true,
-          help: "원문·증빙 파일을 Supabase Storage에 업로드하고 논문 첨부로 등록합니다.",
+          help: "원문·증빙 파일을 파일 저장소에 업로드하고 논문 첨부로 등록합니다.",
         },
         { name: "is_public", label: "is_public", type: "checkbox" },
       ],
@@ -258,7 +258,7 @@ function buildResourceConfigs(currentUser, data) {
           label: "업로드 파일",
           type: "file",
           multiple: false,
-          help: "파일을 선택하면 Supabase Storage 업로드 후 아래 파일 정보가 자동으로 채워집니다.",
+          help: "파일을 선택하면 파일 저장소 업로드 후 아래 파일 정보가 자동으로 채워집니다.",
         },
         { name: "title", label: "title", type: "text" },
         { name: "description", label: "description", type: "textarea" },
@@ -303,7 +303,7 @@ function buildResourceConfigs(currentUser, data) {
       },
       fields: [
         { name: "name", label: "예산명", type: "text" },
-        { name: "fund_type", label: "재원 구분", type: "select", options: ["department", "research", "other"] },
+        { name: "fund_type", label: "재원 구분", type: "select", options: [option("department", "학과 운영비"), option("research", "연구비"), option("other", "기타")] },
         {
           name: "project_id",
           label: "연구과제 (선택)",
@@ -441,7 +441,7 @@ function FormModal({ modal, onClose, onSubmit, submitting = false }) {
             return (
               <label key={field.name} className="checkbox-field">
                 <input type="checkbox" checked={Boolean(value)} onChange={(event) => updateValue(field.name, event.target.checked)} />
-                <span>{field.label}</span>
+                <span>{formatLabel(field.label)}</span>
               </label>
             );
           }
@@ -449,7 +449,7 @@ function FormModal({ modal, onClose, onSubmit, submitting = false }) {
           if (field.type === "textarea") {
             return (
               <label key={field.name} className="field">
-                <span>{field.label}</span>
+                <span>{formatLabel(field.label)}</span>
                 <textarea value={value} rows={4} onChange={(event) => updateValue(field.name, event.target.value)} />
               </label>
             );
@@ -459,7 +459,7 @@ function FormModal({ modal, onClose, onSubmit, submitting = false }) {
             const files = Array.isArray(value) ? value : [];
             return (
               <div key={field.name} className="field file-draft-field">
-                <span>{field.label}</span>
+                <span>{formatLabel(field.label)}</span>
                 <input
                   key={files.map((file) => file.filename).join("|") || "empty"}
                   type="file"
@@ -489,7 +489,7 @@ function FormModal({ modal, onClose, onSubmit, submitting = false }) {
             const selected = Array.isArray(value) ? value.map(String) : [];
             return (
               <fieldset key={field.name} className="multi-select-field">
-                <legend>{field.label}</legend>
+                <legend>{formatLabel(field.label)}</legend>
                 <div className="multi-select-grid">
                   {field.options.map((item) => {
                     const optionItem = typeof item === "string" ? option(item) : item;
@@ -516,7 +516,7 @@ function FormModal({ modal, onClose, onSubmit, submitting = false }) {
           if (field.type === "select") {
             return (
               <label key={field.name} className="field">
-                <span>{field.label}</span>
+                <span>{formatLabel(field.label)}</span>
                 <select value={value} onChange={(event) => updateValue(field.name, event.target.value)}>
                   {field.options.map((item) => {
                     const optionItem = typeof item === "string" ? option(item) : item;
@@ -533,7 +533,7 @@ function FormModal({ modal, onClose, onSubmit, submitting = false }) {
 
           return (
             <label key={field.name} className="field">
-              <span>{field.label}</span>
+              <span>{formatLabel(field.label)}</span>
               <input type={field.type || "text"} value={value} onChange={(event) => updateValue(field.name, event.target.value)} />
             </label>
           );
@@ -554,8 +554,14 @@ function DetailModal({ detail, onClose }) {
       <dl className="detail-grid">
         {content.map((item) => (
           <div key={item.label}>
-            <dt>{item.label}</dt>
-            <dd>{typeof item.value === "boolean" ? (item.value ? "true" : "false") : String(item.value || "-")}</dd>
+            <dt>{formatLabel(item.label)}</dt>
+            <dd>{typeof item.value === "boolean"
+              ? (item.value ? "예" : "아니오")
+              : /(?:date|_at|datetime)/i.test(String(item.label))
+                ? formatDate(item.value)
+                : Array.isArray(item.value)
+                  ? (item.value.length ? item.value.join(", ") : "-")
+                  : formatLabel(item.value)}</dd>
           </div>
         ))}
       </dl>
@@ -679,7 +685,7 @@ export default function App() {
     }
     const config = resourceConfigs[key];
     if (!config) {
-      showToast("해당 기능은 백엔드 API가 아직 제공되지 않습니다.", "warning");
+      showToast("해당 기능은 서버에서 아직 제공되지 않습니다.", "warning");
       return;
     }
     setFormModal({
@@ -835,17 +841,17 @@ export default function App() {
         { name: "research_topic", label: "연구 주제", type: "textarea" },
         { name: "phone", label: "연락처", type: "text" },
         { name: "bio", label: "소개", type: "textarea" },
-        { name: "github_url", label: "GitHub URL", type: "url" },
-        { name: "linkedin_url", label: "LinkedIn URL", type: "url" },
+        { name: "github_url", label: "GitHub 주소", type: "url" },
+        { name: "linkedin_url", label: "LinkedIn 주소", type: "url" },
         {
           name: "profile_image_file",
           label: "프로필 이미지 업로드",
           type: "file",
           multiple: false,
           accept: "image/*",
-          help: "이미지를 선택하면 Supabase Storage에 업로드한 뒤 프로필 URL을 갱신합니다.",
+          help: "이미지를 선택하면 파일 저장소에 업로드한 뒤 프로필 이미지 주소를 갱신합니다.",
         },
-        { name: "profile_image", label: "프로필 이미지 URL", type: "url" },
+        { name: "profile_image", label: "프로필 이미지 주소", type: "url" },
         { name: "is_public", label: "공개 프로필 노출", type: "checkbox" },
         { name: "preferred_language", label: "언어", type: "select", options: ["ko", "en"] },
       ],
@@ -967,7 +973,7 @@ export default function App() {
       } else if (key === "users" && patch.account_status) {
         updated = await changeUserStatus(id, patch.account_status);
       } else {
-        throw new Error("해당 변경을 지원하는 백엔드 API가 없습니다.");
+        throw new Error("해당 변경을 지원하는 서버 기능이 없습니다.");
       }
 
       replaceItem(key, id, { ...updated, ...patch });
@@ -1211,7 +1217,7 @@ export default function App() {
         {loading ? (
           <div className="hr-placeholder glass">
             <div className="title">불러오는 중…</div>
-            <div className="desc">실제 API 데이터를 불러오고 있습니다.</div>
+            <div className="desc">서버 데이터를 불러오고 있습니다.</div>
           </div>
         ) : activePage === "dashboard" ? (
           <DashboardPage data={data} currentUser={currentUser} actions={actions} globalSearch={globalSearch} />

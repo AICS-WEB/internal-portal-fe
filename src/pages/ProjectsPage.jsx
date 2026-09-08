@@ -6,6 +6,7 @@ import Pagination from "../components/Pagination.jsx";
 import SearchInput from "../components/SearchInput.jsx";
 import SectionHeader from "../components/SectionHeader.jsx";
 import { usePagedList } from "../hooks/usePagedList.js";
+import { formatLabel } from "../utils/format.js";
 import { hasRole } from "../utils/permissions.js";
 
 export default function ProjectsPage({ data, currentUser, actions, globalSearch }) {
@@ -15,7 +16,7 @@ export default function ProjectsPage({ data, currentUser, actions, globalSearch 
   const statusOptions = useMemo(() => [
     { value: "all", label: "전체" },
     ...[...new Set(data.researchProjects.map((project) => project.status).filter(Boolean))]
-      .map((value) => ({ value, label: value })),
+      .map((value) => ({ value, label: formatLabel(value) })),
   ], [data.researchProjects]);
 
   const projects = useMemo(() => {
@@ -33,7 +34,7 @@ export default function ProjectsPage({ data, currentUser, actions, globalSearch 
   return (
     <div className="page-stack">
       <SectionHeader
-        title="Projects"
+        title="연구과제"
         description="내부 연구과제의 상태와 공개 여부를 관리합니다."
         actions={canManage ? (
           <Button variant="primary" onClick={() => actions.openCreate("researchProjects")}>과제 등록</Button>

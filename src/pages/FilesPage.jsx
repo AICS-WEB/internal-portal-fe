@@ -61,7 +61,7 @@ export default function FilesPage({ data, actions }) {
   return (
     <div className="page-stack">
       <SectionHeader
-        title="Files"
+        title="자료"
         description="공용 자료와 템플릿 파일을 권한별로 관리합니다."
         actions={
           <Button variant="primary" onClick={() => actions.openCreate("sharedFiles")}>

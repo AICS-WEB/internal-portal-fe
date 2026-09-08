@@ -121,7 +121,7 @@ export default function RegisterPage({ onBack }) {
             <BrandMark />
             <span>
               <strong>AICS Lab Hub</strong>
-              <small>Internal Portal</small>
+              <small>내부 포털</small>
             </span>
           </button>
           <div className="register-intro-copy">
@@ -224,11 +224,11 @@ export default function RegisterPage({ onBack }) {
                   <FieldError message={errors.phone} />
                 </label>
                 <label className="field">
-                  <span>GitHub URL</span>
+                  <span>GitHub 주소</span>
                   <input type="url" value={values.githubUrl} onChange={(event) => updateValue("githubUrl", event.target.value)} placeholder="https://github.com/username" />
                 </label>
                 <label className="field">
-                  <span>LinkedIn URL</span>
+                  <span>LinkedIn 주소</span>
                   <input type="url" value={values.linkedinUrl} onChange={(event) => updateValue("linkedinUrl", event.target.value)} placeholder="https://linkedin.com/in/username" />
                 </label>
               </div>
@@ -241,9 +241,9 @@ export default function RegisterPage({ onBack }) {
                   {values.profileImage ? <img src={values.profileImage} alt="프로필 미리보기" /> : <span>{profileInitial}</span>}
                 </div>
                 <label className="field">
-                  <span>프로필 이미지 URL</span>
+                  <span>프로필 이미지 주소</span>
                   <input type="url" value={values.profileImage} onChange={(event) => updateValue("profileImage", event.target.value)} placeholder="https://example.com/profile.jpg" />
-                  <small>이미지 업로드 API 연결 전까지 공개 이미지 URL을 사용합니다.</small>
+                  <small>이미지 업로드 기능이 연결되기 전까지 공개 이미지 주소를 사용합니다.</small>
                 </label>
               </div>
             </fieldset>

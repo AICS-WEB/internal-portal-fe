@@ -1,44 +1,7 @@
-import { useMemo, useState } from "react";
-import { formatNumber, toDateTimeInput, todayISO } from "../utils/format.js";
+import Badge from "../components/Badge.jsx";
+import Button from "../components/Button.jsx";
+import { formatDateOnly, formatDateTime, formatLabel, formatNumber, todayISO } from "../utils/format.js";
 
-const WEEK_LABELS = ["월", "화", "수", "목", "금", "토"];
-const HOURS = ["9:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"];
-const HOUR_START = 9;
-const HOUR_END = 18;
-const ROW_H = 44; // px per hour row
-
-// HR-only concepts (benefits) kept as handoff demo content.
-const BENEFITS = [
-  { label: "퇴직연금", items: [{ icon: "₩", title: "DC형 적립", sub: "월 320,000원" }] },
-  {
-    label: "지급 장비",
-    items: [
-      { icon: "▭", title: "MacBook Air", sub: "M1 · 2023년 지급" },
-      { icon: "▢", title: "Studio Display", sub: "27인치 · 2024년 지급" },
-    ],
-  },
-  {
-    label: "보상 요약",
-    items: [
-      { icon: "◈", title: "연봉", sub: "₩50,400,000" },
-      { icon: "◇", title: "성과급", sub: "연 1회 · 3월" },
-    ],
-  },
-  { label: "복리후생", items: [{ icon: "✦", title: "건강검진", sub: "연 1회 전액 지원" }] },
-];
-
-const TASK_ICONS = ["◇", "◆", "○", "◎", "□"];
-const DEMO_TASKS = [
-  { title: "면접", time: "9월 13일, 08:30" },
-  { title: "팀 미팅", time: "9월 13일, 10:30" },
-  { title: "프로젝트 업데이트", time: "9월 13일, 13:00" },
-  { title: "3분기 목표 논의", time: "9월 13일, 14:45" },
-  { title: "인사 규정 검토", time: "9월 13일, 16:30" },
-];
-
-const ROLE_LABELS = { member: "일반 구성원", manager: "관리자", admin: "최고 관리자" };
-
-// Quick-create shortcuts (replaces the decorative metric bars in the greeting row).
 const QUICK_ACTIONS = [
   { label: "공지 작성", resource: "notices", managerOnly: true },
   { label: "일정 등록", resource: "calendarEvents" },
@@ -47,265 +10,189 @@ const QUICK_ACTIONS = [
   { label: "구매 신청", resource: "purchaseRequests" },
 ];
 
-function pad(n) {
-  return String(n).padStart(2, "0");
+function percent(part, total) {
+  if (!total) return 0;
+  return Math.min(100, Math.round((part / total) * 100));
 }
 
-function eventTimeLabel(event) {
-  const localValue = toDateTimeInput(event.start_datetime);
-  const match = localValue.match(/^\d{4}-(\d{2})-(\d{2})T(\d{2}:\d{2})$/);
-  if (!match) return event.location || "";
-  return `${Number(match[1])}월 ${Number(match[2])}일 ${match[3]}`;
+function dateValue(item) {
+  return item?.requested_at || item?.created_at || item?.start_datetime || item?.start_date || "";
+}
+
+function ProgressRow({ label, value, total, tone = "blue" }) {
+  const ratio = percent(value, total);
+  return (
+    <div className="analytics-progress-row">
+      <div className="analytics-progress-label"><span>{label}</span><strong>{formatNumber(value)}</strong></div>
+      <div className="analytics-progress-track" aria-label={`${label} ${ratio}%`}>
+        <span className={`tone-${tone}`} style={{ width: `${ratio}%` }} />
+      </div>
+    </div>
+  );
 }
 
 export default function DashboardPage({ data, currentUser, actions }) {
   const today = todayISO();
-  const [openAcc, setOpenAcc] = useState(1);
-  const [doneTasks, setDoneTasks] = useState([0, 1]);
+  const users = data.users || [];
+  const notices = data.notices || [];
+  const events = data.calendarEvents || [];
+  const projects = data.researchProjects || [];
+  const publications = data.publications || [];
+  const leaveRequests = data.leaveRequests || [];
+  const purchaseRequests = data.purchaseRequests || [];
+  const attendance = data.attendanceRecords || [];
 
-  const memberCount = data.users.filter((u) => u.account_status === "approved").length || data.users.length;
-  const pubCount = data.publications.length;
-  const projectCount = data.researchProjects.length;
+  const memberCount = users.filter((user) => user.account_status === "approved").length || users.length;
+  const activeProjects = projects.filter((project) => ["active", "in_progress", "ongoing"].includes(String(project.status).toLowerCase())).length;
+  const publishedPapers = publications.filter((publication) => publication.status === "published").length;
+  const todayAttendance = attendance.filter((record) => record.date === today);
+  const presentToday = todayAttendance.filter((record) => ["present", "late"].includes(record.status)).length;
+  const pendingLeave = leaveRequests.filter((request) => request.status === "pending").length;
+  const approvedLeave = leaveRequests.filter((request) => request.status === "approved").length;
+  const reviewingPapers = publications.filter((publication) => ["submitted", "under_review"].includes(publication.status)).length;
 
-  // Week (Mon–Sat) for the calendar card, with today highlighted.
-  const weekDays = useMemo(() => {
-    const base = new Date();
-    const dow = base.getDay(); // 0 Sun .. 6 Sat
-    const monday = new Date(base);
-    monday.setDate(base.getDate() - ((dow + 6) % 7));
-    return WEEK_LABELS.map((name, i) => {
-      const d = new Date(monday);
-      d.setDate(monday.getDate() + i);
-      const iso = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
-      return { name, num: d.getDate(), iso, isToday: iso === today, month: d.getMonth() + 1, year: d.getFullYear() };
-    });
-  }, [today]);
+  const upcomingEvents = [...events]
+    .filter((event) => event.start_datetime && String(event.start_datetime).slice(0, 10) >= today)
+    .sort((a, b) => String(a.start_datetime).localeCompare(String(b.start_datetime)))
+    .slice(0, 5);
 
-  const monthLabel = weekDays.length ? `${weekDays[2].year}년 ${weekDays[2].month}월` : "";
-
-  // Events placed on the week grid (Mon–Sat, 9:00–18:00) by weekday column and start time.
-  const dayEvents = useMemo(() => {
-    return data.calendarEvents
-      .map((e) => {
-        const localValue = toDateTimeInput(e.start_datetime);
-        const day = localValue.slice(0, 10);
-        const idx = weekDays.findIndex((d) => d.iso === day);
-        const timeMatch = localValue.match(/T(\d{2}):(\d{2})$/);
-        if (idx < 0 || !timeMatch) return null;
-        const hour = Number(timeMatch[1]);
-        const minute = Number(timeMatch[2]);
-        const hourFloat = hour + minute / 60;
-        if (hourFloat < HOUR_START || hourFloat >= HOUR_END) return null;
-        return {
-          id: e.id,
-          title: e.title,
-          type: e.event_type,
-          time: `${pad(hour)}:${pad(minute)}`,
-          idx,
-          top: (hourFloat - HOUR_START) * ROW_H,
-        };
-      })
-      .filter(Boolean);
-  }, [data.calendarEvents, weekDays]);
-
-  // Onboarding task list ← upcoming calendar events (fallback to demo).
-  const taskItems = useMemo(() => {
-    const upcoming = [...data.calendarEvents]
-      .filter((e) => e.start_datetime)
-      .sort((a, b) => String(a.start_datetime).localeCompare(String(b.start_datetime)))
-      .slice(0, 5)
-      .map((e, i) => ({ icon: TASK_ICONS[i % TASK_ICONS.length], title: e.title, time: eventTimeLabel(e) }));
-    return upcoming.length ? upcoming : DEMO_TASKS.map((t, i) => ({ icon: TASK_ICONS[i], ...t }));
-  }, [data.calendarEvents]);
-
-  const roleLabel = ROLE_LABELS[currentUser.role] || currentUser.role || "구성원";
-  const doneCount = doneTasks.length;
+  const recentRequests = [
+    ...leaveRequests.map((item) => ({ ...item, requestType: "휴가", requestTitle: formatLabel(item.leave_type), requesterName: item.user_name })),
+    ...purchaseRequests.map((item) => ({ ...item, requestType: "구매", requestTitle: item.item_name, requesterName: item.requester })),
+  ].sort((a, b) => String(dateValue(b)).localeCompare(String(dateValue(a)))).slice(0, 5);
 
   return (
-    <>
-      <div className="hr-greeting-row">
-        <div className="hr-greeting">
+    <div className="dashboard-page">
+      <section className="dashboard-intro">
+        <div>
+          <p className="dashboard-eyebrow">연구실 업무 공간</p>
           <h1>안녕하세요, {currentUser.name}님</h1>
-          <div className="hr-quick-wrap">
-            <div className="hr-quick">
-              {QUICK_ACTIONS.filter((action) => !action.managerOnly || actions.isManager).map((action) => (
-                <button
-                  key={action.resource}
-                  type="button"
-                  className="hr-quick-btn"
-                  onClick={() => actions.openCreate(action.resource)}
-                >
-                  {action.label}
+          <p>오늘 연구실 현황과 진행 중인 업무를 확인하세요.</p>
+        </div>
+        <div className="dashboard-quick-actions">
+          {QUICK_ACTIONS.filter((item) => !item.managerOnly || actions.isManager).map((item) => (
+            <Button key={item.resource} size="sm" variant={item.resource === "calendarEvents" ? "primary" : "secondary"} onClick={() => actions.openCreate(item.resource)}>
+              {item.label}
+            </Button>
+          ))}
+        </div>
+      </section>
+
+      <section className="overview-hero">
+        <div className="overview-copy">
+          <span className="overview-kicker">연구실 한눈에 보기</span>
+          <h2>연구와 운영 현황을<br />한 화면에서 확인하세요.</h2>
+          <p>현재 서버에서 불러온 구성원, 연구과제, 논문, 일정 데이터를 기준으로 집계합니다.</p>
+        </div>
+        <div className="overview-network" aria-hidden="true">
+          <span className="network-orbit orbit-one" /><span className="network-orbit orbit-two" />
+          <span className="network-node node-one" /><span className="network-node node-two" /><span className="network-node node-three" />
+        </div>
+        <div className="overview-metrics">
+          <div><span>구성원</span><strong>{formatNumber(memberCount)}</strong></div>
+          <div><span>진행 과제</span><strong>{formatNumber(activeProjects)}</strong></div>
+          <div><span>논문</span><strong>{formatNumber(publications.length)}</strong></div>
+          <div><span>예정 일정</span><strong>{formatNumber(upcomingEvents.length)}</strong></div>
+        </div>
+      </section>
+
+      <div className="dashboard-workspace-grid">
+        <div className="dashboard-main-column">
+          <section className="workspace-card recent-notices-card">
+            <div className="workspace-card-header">
+              <div><span className="card-kicker">공지</span><h2>최근 공지</h2></div>
+              <Button size="sm" variant="ghost" onClick={() => actions.navigate("notices")}>전체 보기</Button>
+            </div>
+            <div className="compact-list">
+              {notices.slice(0, 5).map((notice) => (
+                <button key={notice.id} type="button" className="compact-list-row" onClick={() => actions.openNoticeDetail(notice)}>
+                  <div className="compact-list-main">
+                    <div className="inline-gap"><Badge value={notice.category} />{notice.is_pinned ? <span className="pin-label">고정</span> : null}</div>
+                    <strong>{notice.title}</strong><span>{notice.author || "작성자 미상"}</span>
+                  </div>
+                  <time>{formatDateOnly(notice.created_at)}</time>
                 </button>
               ))}
+              {!notices.length ? <p className="empty-inline">등록된 공지가 없습니다.</p> : null}
             </div>
-          </div>
+          </section>
+
+          <section className="workspace-card schedule-card">
+            <div className="workspace-card-header">
+              <div><span className="card-kicker">일정</span><h2>이번 주 일정</h2></div>
+              <Button size="sm" variant="ghost" onClick={() => actions.navigate("calendar")}>캘린더 열기</Button>
+            </div>
+            <div className="schedule-timeline">
+              {upcomingEvents.map((event) => (
+                <article key={event.id} className="schedule-row">
+                  <div className="schedule-date"><strong>{formatDateOnly(event.start_datetime).slice(5)}</strong><span>{formatDateTime(event.start_datetime).slice(11)}</span></div>
+                  <span className="schedule-line" />
+                  <div className="schedule-content"><Badge value={event.event_type} /><strong>{event.title}</strong><p>{event.location || "장소 미정"}</p></div>
+                </article>
+              ))}
+              {!upcomingEvents.length ? <p className="empty-inline">예정된 일정이 없습니다.</p> : null}
+            </div>
+          </section>
+
+          <section className="workspace-card requests-card">
+            <div className="workspace-card-header"><div><span className="card-kicker">신청</span><h2>최근 신청</h2></div></div>
+            <div className="request-list">
+              {recentRequests.map((request) => (
+                <article key={`${request.requestType}-${request.id}`} className="request-row">
+                  <span className="request-type">{request.requestType}</span>
+                  <div><strong>{request.requestTitle || "신청"}</strong><p>{request.requesterName || "신청자 미상"}</p></div>
+                  <Badge value={request.status} /><time>{formatDateOnly(dateValue(request))}</time>
+                </article>
+              ))}
+              {!recentRequests.length ? <p className="empty-inline">최근 신청 내역이 없습니다.</p> : null}
+            </div>
+          </section>
+
+          <section className="workspace-card research-card">
+            <div className="workspace-card-header">
+              <div><span className="card-kicker">연구</span><h2>연구 현황</h2></div>
+              <Button size="sm" variant="ghost" onClick={() => actions.navigate("projects")}>과제 보기</Button>
+            </div>
+            <div className="research-grid">
+              {projects.slice(0, 4).map((project) => (
+                <article key={project.id} className="research-item">
+                  <div><Badge value={project.status || "unknown"} /><span>{project.funding_agency || "지원기관 미정"}</span></div>
+                  <strong>{project.title}</strong><p>{formatDateOnly(project.start_date)} ~ {formatDateOnly(project.end_date)}</p>
+                </article>
+              ))}
+              {!projects.length ? <p className="empty-inline">등록된 연구과제가 없습니다.</p> : null}
+            </div>
+          </section>
         </div>
-        <div className="hr-stats">
-          <div>
-            <div className="hr-stat-num"><span className="marker" />{formatNumber(memberCount)}</div>
-            <div className="hr-stat-cap">구성원</div>
-          </div>
-          <div>
-            <div className="hr-stat-num"><span className="marker" />{formatNumber(pubCount)}</div>
-            <div className="hr-stat-cap">논문</div>
-          </div>
-          <div>
-            <div className="hr-stat-num big"><span className="marker" />{formatNumber(projectCount)}</div>
-            <div className="hr-stat-cap">과제</div>
-          </div>
-        </div>
+
+        <aside className="dashboard-analytics" aria-label="연구실 분석 현황">
+          <section className="analytics-card attendance-analytics">
+            <div className="analytics-card-title"><span>오늘 출결</span><strong>{presentToday}/{todayAttendance.length || memberCount}</strong></div>
+            <div className="attendance-ring" style={{ "--progress": `${percent(presentToday, todayAttendance.length || memberCount)}%` }}>
+              <div><strong>{percent(presentToday, todayAttendance.length || memberCount)}%</strong><span>출석</span></div>
+            </div>
+            <div className="analytics-meta"><span>출석·지각</span><strong>{presentToday}명</strong></div>
+          </section>
+          <section className="analytics-card">
+            <div className="analytics-card-title"><span>휴가 현황</span><strong>{leaveRequests.length}</strong></div>
+            <ProgressRow label="승인 대기" value={pendingLeave} total={leaveRequests.length} tone="amber" />
+            <ProgressRow label="승인" value={approvedLeave} total={leaveRequests.length} tone="green" />
+          </section>
+          <section className="analytics-card">
+            <div className="analytics-card-title"><span>연구 프로젝트</span><strong>{projects.length}</strong></div>
+            <ProgressRow label="진행 중" value={activeProjects} total={projects.length} />
+            <ProgressRow label="완료" value={projects.filter((project) => {
+              const status = String(project.status).toLowerCase();
+              return status === "completed" || status.startsWith("closed");
+            }).length} total={projects.length} tone="slate" />
+          </section>
+          <section className="analytics-card">
+            <div className="analytics-card-title"><span>논문 상태</span><strong>{publications.length}</strong></div>
+            <ProgressRow label="심사 중" value={reviewingPapers} total={publications.length} tone="amber" />
+            <ProgressRow label="게재 완료" value={publishedPapers} total={publications.length} tone="green" />
+          </section>
+        </aside>
       </div>
-
-      <div className="hr-grid">
-        {/* Employee card ← current user */}
-        <div className="hr-emp-card hr-area-emp">
-          {currentUser.profile_image ? (
-            <img className="hr-emp-photo" src={currentUser.profile_image} alt="" />
-          ) : (
-            <svg width="100%" height="100%" aria-hidden="true">
-              <defs>
-                <pattern id="stripeA" width="12" height="12" patternTransform="rotate(45)" patternUnits="userSpaceOnUse">
-                  <rect width="12" height="12" fill="#e3eaf3" />
-                  <rect width="4" height="12" fill="#cfdcec" />
-                </pattern>
-              </defs>
-              <rect width="100%" height="100%" fill="url(#stripeA)" />
-            </svg>
-          )}
-          {!currentUser.profile_image ? <div className="hr-emp-chip">프로필 사진</div> : null}
-          <div className="hr-emp-overlay">
-            <div>
-              <div className="hr-emp-name">{currentUser.name}</div>
-              <div className="hr-emp-role">{currentUser.department || currentUser.research_topic || "AICS Lab"}</div>
-            </div>
-            <div className="hr-emp-pill">{roleLabel}</div>
-          </div>
-        </div>
-
-        {/* Onboarding (demo) */}
-        <div className="hr-card glass hr-row1 hr-area-onboard">
-          <div className="hr-card-head" style={{ alignItems: "baseline" }}>
-            <div className="hr-card-title">온보딩</div>
-            <div className="hr-onboard-pct">18%</div>
-          </div>
-          <div className="hr-onboard-bars">
-            <div style={{ flex: 1.5 }}>
-              <div className="hr-onboard-cap">30%</div>
-              <div className="hr-onboard-bar" style={{ height: 44, background: "#afccee" }}>과제</div>
-            </div>
-            <div style={{ flex: 1.2 }}>
-              <div className="hr-onboard-cap">25%</div>
-              <div className="hr-onboard-bar" style={{ height: 56, background: "#1a1a18" }} />
-            </div>
-            <div style={{ flex: 0.8 }}>
-              <div className="hr-onboard-cap">0%</div>
-              <div className="hr-onboard-bar" style={{ height: 40, background: "#dce5f0" }} />
-            </div>
-          </div>
-          <div className="hr-onboard-foot">
-            <div className="row"><span>서류 제출</span><span style={{ color: "#1a1a18", fontWeight: 500 }}>완료</span></div>
-            <div className="divider" />
-            <div className="row"><span>장비 지급</span><span style={{ color: "#8a867c" }}>대기</span></div>
-          </div>
-        </div>
-
-        {/* Benefits accordion (demo) */}
-        <div className="hr-accordion glass hr-area-benefits">
-          {BENEFITS.map((row, i) => {
-            const open = openAcc === i;
-            return (
-              <div key={row.label} className="hr-acc-row">
-                <button type="button" className="hr-acc-head" onClick={() => setOpenAcc(open ? -1 : i)}>
-                  {row.label}
-                  <span className={`hr-acc-caret${open ? " open" : ""}`}>▼</span>
-                </button>
-                {open ? (
-                  <div className="hr-acc-body">
-                    {row.items.map((it) => (
-                      <div key={it.title} className="hr-acc-item">
-                        <div className="hr-acc-tile">{it.icon}</div>
-                        <div className="body">
-                          <div className="title">{it.title}</div>
-                          <div className="sub">{it.sub}</div>
-                        </div>
-                        <div className="more">⋮</div>
-                      </div>
-                    ))}
-                  </div>
-                ) : null}
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Week calendar ← real calendarEvents, 9:00–18:00 */}
-        <div className="hr-cal glass hr-area-cal">
-          <div className="hr-cal-head">
-            <div className="hr-cal-pill">{monthLabel ? `${weekDays[2].month - 1 || 12}월` : "이전"}</div>
-            <div className="hr-cal-month">{monthLabel}</div>
-            <div className="hr-cal-pill">{monthLabel ? `${(weekDays[2].month % 12) + 1}월` : "다음"}</div>
-          </div>
-          <div className="hr-cal-days">
-            <div />
-            {weekDays.map((d) => (
-              <div key={d.iso} className="hr-cal-day">
-                <div className="name">{d.name}</div>
-                <div className={`num${d.isToday ? " today" : ""}`}>{d.num}</div>
-              </div>
-            ))}
-          </div>
-          <div className="hr-cal-grid">
-            {HOURS.map((h) => (
-              <div key={h} className="hr-cal-hour">
-                <div className="label">{h}</div>
-                <div className="rule" />
-              </div>
-            ))}
-            {dayEvents.map((ev) => (
-              <div
-                key={ev.id}
-                className={`hr-cal-ev ${ev.type === "meeting" || ev.type === "deadline" ? "dark" : "light"}`}
-                style={{
-                  top: ev.top,
-                  left: `calc(66px + ${ev.idx} * ((100% - 66px) / 6) + 3px)`,
-                  width: "calc((100% - 66px) / 6 - 6px)",
-                }}
-                title={`${ev.title} · ${ev.time}`}
-              >
-                <div className="ev-title">{ev.title}</div>
-                <div className="ev-sub">{ev.time}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Tasks ← upcoming events */}
-        <div className="hr-tasks hr-area-tasks">
-          <div className="hr-tasks-head">
-            <div className="title">온보딩 과제</div>
-            <div className="hr-tasks-count">{doneCount}<span className="den">/{taskItems.length}</span></div>
-          </div>
-          {taskItems.map((t, i) => {
-            const done = doneTasks.includes(i);
-            return (
-              <button
-                key={`${t.title}-${i}`}
-                type="button"
-                className={`hr-task${done ? " done" : ""}`}
-                onClick={() => setDoneTasks((cur) => (cur.includes(i) ? cur.filter((x) => x !== i) : cur.concat(i)))}
-              >
-                <div className="hr-task-tile">{t.icon}</div>
-                <div className="body">
-                  <div className="hr-task-title">{t.title}</div>
-                  <div className="hr-task-time">{t.time}</div>
-                </div>
-                <div className="hr-task-dot">{done ? "✓" : ""}</div>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    </>
+    </div>
   );
 }

@@ -43,10 +43,11 @@ import {
 } from "./api/portal.js";
 import Button from "./components/Button.jsx";
 import ConfirmModal from "./components/ConfirmModal.jsx";
-import HrTopbar from "./components/HrTopbar.jsx";
+import Header from "./components/Header.jsx";
 import Modal from "./components/Modal.jsx";
 import NotificationCenterModal from "./components/NotificationCenterModal.jsx";
 import PublicationFilesModal from "./components/PublicationFilesModal.jsx";
+import Sidebar from "./components/Sidebar.jsx";
 import Toast from "./components/Toast.jsx";
 import AttendancePage from "./pages/AttendancePage.jsx";
 import AdminPage from "./pages/AdminPage.jsx";
@@ -1210,6 +1211,7 @@ export default function App() {
   };
 
   const actions = {
+    navigate: setActivePage,
     openCreate,
     openEdit,
     openForm,
@@ -1317,30 +1319,39 @@ export default function App() {
   }
 
   return (
-    <div className="hr-page">
-      <div className="hr-frame">
-        <HrTopbar
-          activePage={activePage}
-          onNavigate={setActivePage}
+    <div className="workspace-shell">
+      <Sidebar
+        activePage={activePage}
+        onNavigate={setActivePage}
+        isOpen={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        currentUser={currentUser}
+      />
+      <div className="workspace-body">
+        <Header
+          title={activeMeta.title}
+          searchValue={globalSearch}
+          onSearchChange={setGlobalSearch}
           currentUser={currentUser}
           notifications={data.notifications}
+          onMenuClick={() => setSidebarOpen(true)}
+          onQuickCreate={openCreate}
           onShowNotifications={showNotifications}
-          onProfile={() => setActivePage("mypage")}
-          onLogout={handleLogout}
+          onProfileClick={() => setActivePage("mypage")}
+          onLogoutClick={handleLogout}
         />
-
-        {loading ? (
-          <div className="hr-placeholder glass">
-            <div className="title">불러오는 중…</div>
-            <div className="desc">실제 API 데이터를 불러오고 있습니다.</div>
-          </div>
-        ) : activePage === "dashboard" ? (
-          <DashboardPage data={data} currentUser={currentUser} actions={actions} globalSearch={globalSearch} />
-        ) : (
-          <div className="hr-embed">
+        <main className={`workspace-content ${activePage === "dashboard" ? "dashboard-content" : ""}`}>
+          {loading ? (
+            <div className="workspace-loading">
+              <div className="workspace-loading-mark" />
+              <div><strong>불러오는 중…</strong><span>연구실 데이터를 불러오고 있습니다.</span></div>
+            </div>
+          ) : activePage === "dashboard" ? (
+            <DashboardPage data={data} currentUser={currentUser} actions={actions} globalSearch={globalSearch} />
+          ) : (
             <ActivePage data={data} currentUser={currentUser} actions={actions} globalSearch={globalSearch} />
-          </div>
-        )}
+          )}
+        </main>
       </div>
 
       {formModal ? <FormModal modal={formModal} onClose={() => setFormModal(null)} onSubmit={submitForm} submitting={formSubmitting} /> : null}

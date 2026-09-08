@@ -16,7 +16,7 @@ const labelMap = {
   shared: "공유", personal: "개인", present: "출석", late: "지각", absent: "결석",
   leave: "휴가", half_leave: "반차", pending: "대기", approved: "승인",
   rejected: "반려", deactivated: "비활성", purchased: "구매 완료", delivered: "입고 완료",
-  active: "진행 중", completed: "완료", closed: "종료", watch: "주의",
+  active: "진행 중", ongoing: "진행 중", in_progress: "진행 중", completed: "완료", closed: "종료", watch: "주의",
   writing: "작성 중", submitted: "제출", under_review: "심사 중", accepted: "채택",
   published: "게재 완료", paper: "논문", presentation: "발표 자료", template: "서식",
   software: "소프트웨어", member: "일반 구성원", manager: "관리자", admin: "최고 관리자",
@@ -38,6 +38,8 @@ const labelMap = {
 export function formatLabel(value, fallback = "-") {
   if (value === null || value === undefined || value === "") return fallback;
   const key = String(value).toLowerCase();
+  if (["null", "undefined", "unknown", "n/a"].includes(key)) return fallback;
+  if (key.startsWith("closed ")) return `종료 (${String(value).slice(7)})`;
   return labelMap[key] || String(value);
 }
 
@@ -51,7 +53,7 @@ function parseDate(value) {
 }
 
 export function formatDateOnly(value) {
-  if (!value) return "-";
+  if (!value || ["null", "undefined", "n/a"].includes(String(value).toLowerCase())) return "-";
   const date = parseDate(value);
   if (!date) return String(value);
   return new Intl.DateTimeFormat("ko-KR", {

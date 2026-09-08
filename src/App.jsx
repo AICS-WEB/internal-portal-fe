@@ -64,23 +64,23 @@ import PublicationsPage from "./pages/PublicationsPage.jsx";
 import PurchasesPage from "./pages/PurchasesPage.jsx";
 import RegisterPage from "./pages/RegisterPage.jsx";
 import ResetPasswordPage from "./pages/ResetPasswordPage.jsx";
-import { formatDateOnly, formatDateTime, formatLabel, todayISO } from "./utils/format.js";
+import { formatDateOnly, formatDateTime, formatLabel, toDateTimeInput, todayISO } from "./utils/format.js";
 import { canAccess, hasRole } from "./utils/permissions.js";
 
 const pageRegistry = {
-  dashboard: { title: "Dashboard", component: DashboardPage },
-  notices: { title: "Notices", component: NoticesPage },
-  calendar: { title: "Calendar", component: CalendarPage },
-  attendance: { title: "Attendance", component: AttendancePage },
-  leave: { title: "Leave", component: LeavePage },
-  projects: { title: "Projects", component: ProjectsPage },
-  publications: { title: "Publications", component: PublicationsPage },
-  files: { title: "Files", component: FilesPage },
-  purchases: { title: "Purchases", component: PurchasesPage },
-  budget: { title: "Budget", component: BudgetPage },
-  credentials: { title: "Credentials", component: CredentialsPage },
-  admin: { title: "Admin", component: AdminPage },
-  mypage: { title: "My Page", component: MyPage },
+  dashboard: { title: "대시보드", component: DashboardPage },
+  notices: { title: "공지", component: NoticesPage },
+  calendar: { title: "일정", component: CalendarPage },
+  attendance: { title: "출결", component: AttendancePage },
+  leave: { title: "휴가", component: LeavePage },
+  projects: { title: "연구과제", component: ProjectsPage },
+  publications: { title: "논문", component: PublicationsPage },
+  files: { title: "자료", component: FilesPage },
+  purchases: { title: "구매", component: PurchasesPage },
+  budget: { title: "예산", component: BudgetPage },
+  credentials: { title: "공용 계정", component: CredentialsPage },
+  admin: { title: "사용자 관리", component: AdminPage, minRole: "admin" },
+  mypage: { title: "내 정보", component: MyPage },
 };
 
 const initialData = {
@@ -605,6 +605,17 @@ export default function App() {
   const ActivePage = activeMeta.component;
 
   useEffect(() => {
+    const requiredRole = pageRegistry[activePage]?.minRole;
+    if (requiredRole && !hasRole(currentUser, requiredRole)) {
+      setActivePage("dashboard");
+      setFormModal(null);
+      setDetailModal(null);
+      setConfirmModal(null);
+      setNotificationCenterOpen(false);
+    }
+  }, [activePage, currentUser.role]);
+
+  useEffect(() => {
     const handleHashChange = () => setShowRegister(window.location.hash === "#/register");
     window.addEventListener("hashchange", handleHashChange);
     return () => window.removeEventListener("hashchange", handleHashChange);
@@ -730,7 +741,9 @@ export default function App() {
     const fields = key === "notices" ? config.fields.filter((field) => field.name !== "attachment_files") : config.fields;
     const initialValues = key === "publications"
       ? { ...item, author_user_ids: item.authors?.map((author) => author.user_id ?? author.userId) || [] }
-      : item;
+      : key === "calendarEvents"
+        ? { ...item, start_datetime: toDateTimeInput(item.start_datetime), end_datetime: toDateTimeInput(item.end_datetime) }
+        : item;
     setFormModal({
       title: config.editTitle,
       fields,
@@ -1005,6 +1018,29 @@ export default function App() {
     }
   };
 
+  const openNotification = async (notification) => {
+    if (!notification.read) {
+      try {
+        await markSingleNotificationRead(notification.id);
+      } catch (error) {
+        showToast(error.message, "error");
+      }
+    }
+    const relatedType = notification.related_type || notification.relatedType;
+    const pageByType = {
+      notice: "notices", notice_created: "notices",
+      leave: "leave", leave_request: "leave", leave_requested: "leave", leave_approved: "leave", leave_rejected: "leave",
+      purchase: "purchases", purchase_request: "purchases", purchase_requested: "purchases", purchase_approved: "purchases", purchase_rejected: "purchases",
+      expense: "budget", budget: "budget",
+    };
+    const page = pageByType[relatedType] || pageByType[notification.type];
+    if (page) setActivePage(page);
+    setNotificationCenterOpen(false);
+    if (page === "notices" && (notification.related_id || notification.relatedId)) {
+      await openNoticeDetail({ id: notification.related_id || notification.relatedId });
+    }
+  };
+
   const confirmUpdate = (key, item, patch, label) => {
     const nextValue = patch.status || patch.role || patch.account_status || "변경값";
     confirmAction({
@@ -1065,7 +1101,6 @@ export default function App() {
         { label: "논문 제목", value: detail.title },
         { label: "전체 저자", value: detail.authors_text },
         { label: "연구실 저자", value: detail.authors?.map((author) => author.name || author.user_id).join(", ") },
-        { label: "시스템 등록자", value: detail.registered_by_name || detail.creator_name },
         { label: "게재 연도", value: detail.year },
         { label: "게재일", value: detail.published_date, format: "date" },
         { label: "논문 유형", value: formatLabel(detail.pub_type) },
@@ -1152,9 +1187,9 @@ export default function App() {
     });
   };
 
-  const getCredentialPassword = async (credential, currentPassword) => {
+  const getCredentialPassword = async (credential) => {
     try {
-      const revealed = await revealCredential(credential.id, currentPassword);
+      const revealed = await revealCredential(credential.id);
       return revealed.password;
     } catch (error) {
       showToast(error.message, "error");
@@ -1162,8 +1197,8 @@ export default function App() {
     }
   };
 
-  const copyCredential = async (credential, currentPassword) => {
-    const password = await getCredentialPassword(credential, currentPassword);
+  const copyCredential = async (credential) => {
+    const password = await getCredentialPassword(credential);
     if (!password) return;
     try {
       await logCredentialCopy(credential.id);
@@ -1222,6 +1257,7 @@ export default function App() {
     saveAuthSession(session);
     setAuthSession(session);
     setCurrentUser({ ...session.user, account_status: "approved" });
+    setActivePage("dashboard");
     window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
     setShowRegister(false);
   };
@@ -1235,6 +1271,11 @@ export default function App() {
       clearAuthSession();
       setAuthSession(null);
       setData(cloneData(initialData));
+      setActivePage("dashboard");
+      setFormModal(null);
+      setDetailModal(null);
+      setConfirmModal(null);
+      setNotificationCenterOpen(false);
       setShowRegister(false);
       window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
     }
@@ -1322,6 +1363,7 @@ export default function App() {
           onClose={() => setNotificationCenterOpen(false)}
           onMarkAllRead={markNotificationsRead}
           onMarkRead={markSingleNotificationRead}
+          onOpen={openNotification}
           onSend={sendNotification}
         />
       ) : null}

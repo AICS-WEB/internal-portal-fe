@@ -8,7 +8,7 @@ import SectionHeader from "../components/SectionHeader.jsx";
 import { usePagedList } from "../hooks/usePagedList.js";
 import { formatDateRange, formatLabel } from "../utils/format.js";
 
-export default function ProjectsPage({ data, currentUser, actions, globalSearch }) {
+export default function ProjectsPage({ data, actions, globalSearch }) {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
   const statusOptions = useMemo(() => [
@@ -34,9 +34,9 @@ export default function ProjectsPage({ data, currentUser, actions, globalSearch 
       <SectionHeader
         title="연구과제"
         description="내부 연구과제의 상태와 공개 여부를 관리합니다."
-        actions={(
+        actions={actions.isManager ? (
           <Button variant="primary" onClick={() => actions.openCreate("researchProjects")}>과제 등록</Button>
-        )}
+        ) : null}
       />
 
       <section className="toolbar-panel">
@@ -69,7 +69,7 @@ export default function ProjectsPage({ data, currentUser, actions, globalSearch 
                 <dd>{project.program || "-"} / {project.role || "-"}</dd>
               </div>
             </dl>
-            {actions.canEditOwned(project) ? (
+            {actions.isManager ? (
               <div className="table-actions">
                 <Button size="sm" variant="secondary" onClick={() => actions.openEdit("researchProjects", project)}>수정</Button>
                 <Button size="sm" variant="danger" onClick={() => actions.deleteItem("researchProjects", project.id, "연구과제")}>삭제</Button>

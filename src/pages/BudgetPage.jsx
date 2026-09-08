@@ -30,10 +30,10 @@ export default function BudgetPage({ data, currentUser, actions }) {
       header: "작업",
       render: (expense) => (
         <div className="table-actions">
-          {canManage ? (
+          {canManage && expense.status === "pending" ? (
             <>
-              <Button size="sm" variant="secondary" disabled={expense.status === "approved"} onClick={() => actions.confirmUpdate("expenses", expense, { status: "approved" }, "지출 상태")}>지출 승인</Button>
-              <Button size="sm" variant="secondary" disabled={expense.status === "rejected"} onClick={() => actions.confirmUpdate("expenses", expense, { status: "rejected" }, "지출 상태")}>지출 반려</Button>
+              <Button size="sm" variant="secondary" onClick={() => actions.confirmUpdate("expenses", expense, { status: "approved" }, "지출 상태")}>지출 승인</Button>
+              <Button size="sm" variant="secondary" onClick={() => actions.confirmUpdate("expenses", expense, { status: "rejected" }, "지출 상태")}>지출 반려</Button>
             </>
           ) : "-"}
         </div>

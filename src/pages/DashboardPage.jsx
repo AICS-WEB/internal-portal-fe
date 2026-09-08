@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { formatNumber, todayISO } from "../utils/format.js";
+import { formatNumber, toDateTimeInput, todayISO } from "../utils/format.js";
 
 const WEEK_LABELS = ["월", "화", "수", "목", "금", "토"];
 const HOURS = ["9:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00"];
@@ -36,11 +36,11 @@ const DEMO_TASKS = [
   { title: "인사 규정 검토", time: "9월 13일, 16:30" },
 ];
 
-const ROLE_LABELS = { member: "구성원", manager: "매니저", admin: "관리자" };
+const ROLE_LABELS = { member: "일반 구성원", manager: "관리자", admin: "최고 관리자" };
 
 // Quick-create shortcuts (replaces the decorative metric bars in the greeting row).
 const QUICK_ACTIONS = [
-  { label: "공지 작성", resource: "notices" },
+  { label: "공지 작성", resource: "notices", managerOnly: true },
   { label: "일정 등록", resource: "calendarEvents" },
   { label: "휴가 신청", resource: "leaveRequests" },
   { label: "파일 업로드", resource: "sharedFiles" },
@@ -51,15 +51,11 @@ function pad(n) {
   return String(n).padStart(2, "0");
 }
 
-function toDate(iso) {
-  const d = new Date(iso);
-  return Number.isNaN(d.getTime()) ? null : d;
-}
-
 function eventTimeLabel(event) {
-  const d = toDate(event.start_datetime);
-  if (!d) return event.location || "";
-  return `${d.getMonth() + 1}월 ${d.getDate()}일 ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  const localValue = toDateTimeInput(event.start_datetime);
+  const match = localValue.match(/^\d{4}-(\d{2})-(\d{2})T(\d{2}:\d{2})$/);
+  if (!match) return event.location || "";
+  return `${Number(match[1])}월 ${Number(match[2])}일 ${match[3]}`;
 }
 
 export default function DashboardPage({ data, currentUser, actions }) {
@@ -91,17 +87,20 @@ export default function DashboardPage({ data, currentUser, actions }) {
   const dayEvents = useMemo(() => {
     return data.calendarEvents
       .map((e) => {
-        const day = e.start_datetime?.slice(0, 10);
+        const localValue = toDateTimeInput(e.start_datetime);
+        const day = localValue.slice(0, 10);
         const idx = weekDays.findIndex((d) => d.iso === day);
-        const dt = toDate(e.start_datetime);
-        if (idx < 0 || !dt) return null;
-        const hourFloat = dt.getHours() + dt.getMinutes() / 60;
+        const timeMatch = localValue.match(/T(\d{2}):(\d{2})$/);
+        if (idx < 0 || !timeMatch) return null;
+        const hour = Number(timeMatch[1]);
+        const minute = Number(timeMatch[2]);
+        const hourFloat = hour + minute / 60;
         if (hourFloat < HOUR_START || hourFloat >= HOUR_END) return null;
         return {
           id: e.id,
           title: e.title,
           type: e.event_type,
-          time: `${pad(dt.getHours())}:${pad(dt.getMinutes())}`,
+          time: `${pad(hour)}:${pad(minute)}`,
           idx,
           top: (hourFloat - HOUR_START) * ROW_H,
         };
@@ -129,7 +128,7 @@ export default function DashboardPage({ data, currentUser, actions }) {
           <h1>안녕하세요, {currentUser.name}님</h1>
           <div className="hr-quick-wrap">
             <div className="hr-quick">
-              {QUICK_ACTIONS.map((action) => (
+              {QUICK_ACTIONS.filter((action) => !action.managerOnly || actions.isManager).map((action) => (
                 <button
                   key={action.resource}
                   type="button"

@@ -1,9 +1,10 @@
+import { useState } from "react";
 import Badge from "../components/Badge.jsx";
 import Button from "../components/Button.jsx";
 import DataTable from "../components/DataTable.jsx";
 import SectionHeader from "../components/SectionHeader.jsx";
 import StatCard from "../components/StatCard.jsx";
-import { todayISO } from "../utils/format.js";
+import { formatDateOnly, formatLabel, todayISO } from "../utils/format.js";
 import { hasRole } from "../utils/permissions.js";
 
 export default function AttendancePage({ data, currentUser, actions }) {
@@ -44,7 +45,7 @@ export default function AttendancePage({ data, currentUser, actions }) {
 
   const columns = [
     { key: "user_name", header: "이름" },
-    { key: "date", header: "날짜" },
+    { key: "date", header: "날짜", render: (record) => formatDateOnly(record.date) },
     { key: "status", header: "상태", render: (record) => <Badge value={record.status} /> },
     { key: "check_in", header: "출근" },
     { key: "check_out", header: "퇴근" },
@@ -65,7 +66,7 @@ export default function AttendancePage({ data, currentUser, actions }) {
       <SectionHeader title="출결" description="오늘 출결 상태와 날짜별 출결 기록을 관리합니다." />
 
       <section className="summary-grid three">
-        <StatCard label="오늘 내 상태" value={todayRecord ? "기록 있음" : "기록 없음"} note={todayRecord?.status || "출근 전"} />
+        <StatCard label="오늘 내 상태" value={todayRecord ? "기록 있음" : "기록 없음"} note={todayRecord ? formatLabel(todayRecord.status) : "출근 전"} />
         <StatCard label="오늘 출석" value={`${todayRows.filter((record) => ["present", "late"].includes(record.status)).length}명`} note="출석·지각 포함" tone="success" />
         <StatCard label="휴가/반차" value={`${todayRows.filter((record) => ["leave", "half_leave"].includes(record.status)).length}명`} note="오늘 기준" tone="warning" />
       </section>
@@ -101,4 +102,3 @@ export default function AttendancePage({ data, currentUser, actions }) {
     </div>
   );
 }
-import { useState } from "react";

@@ -2,9 +2,10 @@ import { useState } from "react";
 import Badge from "./Badge.jsx";
 import Button from "./Button.jsx";
 import Modal from "./Modal.jsx";
+import { toDateTimeInput } from "../utils/format.js";
 
 function localDatetime(value) {
-  return typeof value === "string" ? value.slice(0, 16) : "";
+  return toDateTimeInput(value);
 }
 
 function isoDatetime(value) {
@@ -18,7 +19,7 @@ function previousMinute(value) {
 
 export default function RecurringEventModal({ event, onClose, onSaveException, onSplit }) {
   const [exception, setException] = useState({
-    originalDate: event.start_datetime?.slice(0, 10) || "",
+    originalDate: localDatetime(event.start_datetime).slice(0, 10),
     action: "modify",
     newTitle: event.title,
     newStart: localDatetime(event.start_datetime),

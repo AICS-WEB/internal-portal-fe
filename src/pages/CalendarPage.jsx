@@ -3,7 +3,7 @@ import Badge from "../components/Badge.jsx";
 import Button from "../components/Button.jsx";
 import RecurringEventModal from "../components/RecurringEventModal.jsx";
 import SectionHeader from "../components/SectionHeader.jsx";
-import { formatDate } from "../utils/format.js";
+import { formatDate, toDateTimeInput } from "../utils/format.js";
 
 const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
 
@@ -29,7 +29,7 @@ export default function CalendarPage({ data, actions }) {
   const cells = useMemo(() => getMonthCells(data.calendarEvents), [data.calendarEvents]);
   const eventsByDate = useMemo(() => {
     return data.calendarEvents.reduce((acc, event) => {
-      const date = event.start_datetime?.slice(0, 10);
+      const date = toDateTimeInput(event.start_datetime).slice(0, 10);
       acc[date] = acc[date] || [];
       acc[date].push(event);
       return acc;
@@ -39,7 +39,7 @@ export default function CalendarPage({ data, actions }) {
   return (
     <div className="page-stack">
       <SectionHeader
-        title="Calendar"
+        title="일정"
         description="공유 일정과 개인 일정을 함께 확인합니다."
         actions={
           <div className="button-row">
@@ -97,7 +97,7 @@ export default function CalendarPage({ data, actions }) {
                   {formatDate(event.start_datetime)} - {formatDate(event.end_datetime)} · {event.location}
                 </p>
               </div>
-              <div className="button-row">
+              {actions.canEditOwned(event) ? <div className="button-row">
                 {event.is_recurring ? (
                   <Button size="sm" variant="secondary" onClick={() => setRecurringDraft(event)}>
                     반복 회차 관리
@@ -109,7 +109,7 @@ export default function CalendarPage({ data, actions }) {
                 <Button size="sm" variant="danger" onClick={() => actions.deleteItem("calendarEvents", event.id, "일정")}>
                   일정 삭제
                 </Button>
-              </div>
+              </div> : null}
             </article>
           ))}
         </div>

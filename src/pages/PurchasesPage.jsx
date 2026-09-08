@@ -43,16 +43,18 @@ export default function PurchasesPage({ data, currentUser, actions }) {
       key: "actions",
       header: "작업",
       render: (item) => {
-        const isOwner = item.requester === currentUser.name;
+        const isOwner = String(item.user_id) === String(currentUser.id)
+          || (!item.user_id && item.requester === currentUser.name);
         const canEdit = isOwner && item.status === "pending";
         const canDelete = canReview || canEdit;
         const hasWorkflowAction = canReview && ["pending", "approved", "purchased"].includes(item.status);
+        const hasDeleteAction = canDelete && item.status === "pending";
         return (
           <div className="table-actions">
-            {canReview ? (
+            {canReview && item.status === "pending" ? (
               <>
-                <Button size="sm" variant="secondary" disabled={item.status === "approved"} onClick={() => actions.confirmUpdate("purchaseRequests", item, { status: "approved" }, "구매 신청 상태")}>승인</Button>
-                <Button size="sm" variant="secondary" disabled={item.status === "rejected"} onClick={() => actions.confirmUpdate("purchaseRequests", item, { status: "rejected" }, "구매 신청 상태")}>반려</Button>
+                <Button size="sm" variant="secondary" onClick={() => actions.confirmUpdate("purchaseRequests", item, { status: "approved" }, "구매 신청 상태")}>승인</Button>
+                <Button size="sm" variant="secondary" onClick={() => actions.confirmUpdate("purchaseRequests", item, { status: "rejected" }, "구매 신청 상태")}>반려</Button>
               </>
             ) : null}
             {canReview && item.status === "approved" ? (
@@ -63,7 +65,7 @@ export default function PurchasesPage({ data, currentUser, actions }) {
             ) : null}
             {canEdit ? <Button size="sm" variant="secondary" onClick={() => actions.openEdit("purchaseRequests", item)}>수정</Button> : null}
             {canDelete && item.status === "pending" ? <Button size="sm" variant="danger" onClick={() => actions.deleteItem("purchaseRequests", item.id, "구매 신청")}>삭제</Button> : null}
-            {!hasWorkflowAction && !canEdit && !canDelete ? "-" : null}
+            {!hasWorkflowAction && !canEdit && !hasDeleteAction ? "-" : null}
           </div>
         );
       },

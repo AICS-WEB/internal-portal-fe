@@ -135,11 +135,7 @@ export function normalizeResource(resource, value) {
   if (!value) return value;
   if (resource === "notices") return normalizeNotice(value);
   if (resource === "calendarEvents") {
-    return {
-      ...value,
-      start_datetime: typeof value.start_datetime === "string" ? value.start_datetime.slice(0, 16) : value.start_datetime,
-      end_datetime: typeof value.end_datetime === "string" ? value.end_datetime.slice(0, 16) : value.end_datetime,
-    };
+    return { ...value };
   }
   if (resource === "publications") return { ...value, year: String(value.year) };
   if (resource === "sharedFiles") {
@@ -357,8 +353,8 @@ export async function changeMyPassword(currentPassword, newPassword) {
   });
 }
 
-export async function revealCredential(id, password) {
-  return apiRequest(`/credentials/${id}/reveal`, { method: "POST", body: { password } });
+export async function revealCredential(id) {
+  return apiRequest(`/credentials/${id}/reveal`);
 }
 
 export async function logCredentialCopy(id) {
@@ -452,8 +448,8 @@ function normalizeNotice(value) {
     is_pinned: Boolean(value.is_pinned ?? value.isPinned),
     author: value.author ?? value.author_name ?? value.authorName ?? "-",
     views: Number(value.views ?? value.view_count ?? value.viewCount ?? 0),
-    created_at: dateOnly(value.created_at ?? value.createdAt),
-    updated_at: dateOnly(value.updated_at ?? value.updatedAt),
+    created_at: value.created_at ?? value.createdAt ?? "",
+    updated_at: value.updated_at ?? value.updatedAt ?? "",
   };
 }
 

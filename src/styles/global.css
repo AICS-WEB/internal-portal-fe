@@ -2472,11 +2472,13 @@ button:disabled {
 
 .hr-nav {
   display: flex;
+  flex: 1 1 auto;
   align-items: center;
   gap: 4px;
   margin-left: auto;
   padding: 5px;
-  max-width: 62%;
+  min-width: 0;
+  max-width: none;
   overflow-x: auto;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.4);
@@ -2492,7 +2494,7 @@ button:disabled {
 
 .hr-nav button {
   border: 0;
-  padding: 9px 16px;
+  padding: 9px 10px;
   border-radius: 999px;
   font-size: 13.5px;
   font-weight: 500;
@@ -3530,4 +3532,98 @@ button:disabled {
 /* Non-dashboard pages rendered inside the frame keep their own layout */
 .hr-embed {
   margin-top: 24px;
+}
+
+button.auth-brand {
+  appearance: none;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.table-title-button {
+  border: 0;
+  padding: 0;
+  background: transparent;
+  color: var(--ink);
+  font: inherit;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+}
+
+.table-title-button:hover {
+  text-decoration: underline;
+}
+
+@media (min-width: 769px) {
+  .table-stack .table-wrap {
+    min-height: 500px;
+  }
+}
+
+@media (max-width: 768px) {
+  .hr-page {
+    padding: 8px;
+    overflow-x: hidden;
+  }
+
+  .hr-frame {
+    width: 100%;
+    min-width: 0;
+    padding: 16px;
+    border-radius: 20px;
+    overflow: hidden;
+  }
+
+  .hr-topbar {
+    flex-wrap: wrap;
+  }
+
+  .hr-logo {
+    padding: 9px 14px;
+    font-size: 15px;
+  }
+
+  .hr-controls {
+    margin-left: auto;
+  }
+
+  .hr-controls .hr-pill-btn:first-child {
+    display: none;
+  }
+
+  .hr-nav {
+    order: 3;
+    width: 100%;
+    max-width: none;
+    margin: 6px 0 0;
+    flex-wrap: wrap;
+    overflow-x: visible;
+    justify-content: flex-start;
+    gap: 4px;
+  }
+
+  .hr-nav button {
+    padding: 8px 12px;
+    font-size: 13px;
+  }
+
+  .hr-dashboard,
+  .hr-dashboard-grid,
+  .calendar-layout,
+  .profile-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .hr-embed,
+  .page-stack,
+  .panel,
+  .table-wrap {
+    min-width: 0;
+    max-width: 100%;
+  }
 }

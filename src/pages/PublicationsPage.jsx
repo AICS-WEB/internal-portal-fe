@@ -4,7 +4,7 @@ import Button from "../components/Button.jsx";
 import DataTable from "../components/DataTable.jsx";
 import FilterTabs from "../components/FilterTabs.jsx";
 import SectionHeader from "../components/SectionHeader.jsx";
-import { formatDateTime, formatLabel } from "../utils/format.js";
+import { formatLabel } from "../utils/format.js";
 
 const statusOptions = [
   { value: "all", label: "전체" },
@@ -15,7 +15,7 @@ const statusOptions = [
   { value: "published", label: "출판" },
 ];
 
-export default function PublicationsPage({ data, currentUser, actions }) {
+export default function PublicationsPage({ data, actions }) {
   const [year, setYear] = useState("all");
   const [status, setStatus] = useState("all");
   const years = ["all", ...Array.from(new Set(data.publications.map((item) => item.year)))];
@@ -42,7 +42,6 @@ export default function PublicationsPage({ data, currentUser, actions }) {
     { key: "year", header: "연도" },
     { key: "venue", header: "게재지" },
     { key: "pub_type", header: "유형", render: (item) => formatLabel(item.pub_type) },
-    { key: "registered_by_name", header: "등록자", render: (item) => item.registered_by_name || (String(item.registered_by) === String(currentUser.id) ? currentUser.name : "-") },
     { key: "status", header: "상태", render: (item) => <Badge value={item.status} /> },
     { key: "is_public", header: "공개", render: (item) => <Badge value={item.is_public ? "public" : "private"} /> },
     {

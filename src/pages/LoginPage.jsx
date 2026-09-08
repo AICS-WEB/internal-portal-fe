@@ -66,28 +66,28 @@ export default function LoginPage({ onLogin, onRegister }) {
     <main className="auth-shell">
       <section className="auth-panel">
         <div className="auth-visual">
-          <div className="auth-brand">
+          <button type="button" className="auth-brand" onClick={() => window.location.assign("/")} aria-label="로그인 화면 처음으로">
             <BrandMark />
             <span>
               <strong>AICS Lab Hub</strong>
-              <small>Internal Portal</small>
+              <small>내부 포털</small>
             </span>
-          </div>
+          </button>
           <div className="auth-visual-copy">
-            <p className="register-eyebrow">AICS LAB WORKSPACE</p>
+            <p className="register-eyebrow">AICS 연구실 업무 공간</p>
             <h1>연구와 운영을<br />하나의 흐름으로</h1>
             <p>연구실 일정, 출결, 연구 성과와 내부 자료를 한 곳에서 관리하세요.</p>
           </div>
           <div className="auth-feature-list">
-            <span>Research Management</span>
-            <span>Lab Operations</span>
-            <span>Team Collaboration</span>
+            <span>연구 관리</span>
+            <span>연구실 운영</span>
+            <span>팀 협업</span>
           </div>
         </div>
 
         <div className="login-card">
           <div className="login-card-copy">
-            <p className="register-eyebrow">{resetMode ? "PASSWORD RESET" : "WELCOME BACK"}</p>
+            <p className="register-eyebrow">{resetMode ? "비밀번호 재설정" : "다시 만나 반갑습니다"}</p>
             <h2>{resetMode ? "비밀번호 재설정" : "로그인"}</h2>
             <p>{resetMode ? "가입한 이메일로 재설정 안내를 받을 수 있습니다." : "승인된 연구실 계정으로 로그인해 주세요."}</p>
           </div>

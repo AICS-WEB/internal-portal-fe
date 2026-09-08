@@ -29,6 +29,8 @@ const labelMap = {
   server: "서버", cloud: "클라우드", license: "라이선스", notice_created: "새 공지",
   leave_requested: "휴가 신청", leave_approved: "휴가 승인", leave_rejected: "휴가 반려",
   purchase_requested: "구매 신청", purchase_approved: "구매 승인", purchase_rejected: "구매 반려",
+  purchase_purchased: "구매 완료", purchase_delivered: "입고 완료",
+  expense_requested: "지출 신청", expense_approved: "지출 승인", expense_rejected: "지출 반려",
 };
 
 export function formatLabel(value, fallback = "-") {
@@ -41,7 +43,7 @@ function parseDate(value) {
   if (!value) return null;
   if (value instanceof Date) return Number.isNaN(value.getTime()) ? null : value;
   const text = String(value);
-  const normalized = /^\d{4}-\d{2}-\d{2}$/.test(text) ? `${text}T00:00:00` : text;
+  const normalized = /^\d{4}-\d{2}-\d{2}$/.test(text) ? `${text}T00:00:00+09:00` : text;
   const date = new Date(normalized);
   return Number.isNaN(date.getTime()) ? null : date;
 }
@@ -75,6 +77,17 @@ export function formatDateRange(start, end) {
   const first = formatDateOnly(start);
   const last = formatDateOnly(end);
   return first === last ? first : `${first} ~ ${last}`;
+}
+
+export function toDateTimeInput(value) {
+  const date = parseDate(value);
+  if (!date) return value ? String(value).slice(0, 16) : "";
+  const parts = new Intl.DateTimeFormat("ko-KR", {
+    timeZone: "Asia/Seoul", year: "numeric", month: "2-digit", day: "2-digit",
+    hour: "2-digit", minute: "2-digit", hourCycle: "h23",
+  }).formatToParts(date);
+  const part = (type) => parts.find((item) => item.type === type)?.value || "";
+  return `${part("year")}-${part("month")}-${part("day")}T${part("hour")}:${part("minute")}`;
 }
 
 export function todayISO() {

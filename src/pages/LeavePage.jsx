@@ -59,17 +59,18 @@ export default function LeavePage({ data, currentUser, actions }) {
         const isOwner = String(request.user_id) === String(currentUser.id);
         const canEdit = isOwner && request.status === "pending";
         const canDelete = canReview || canEdit;
+        const hasAction = canEdit || (canReview && request.status === "pending") || (canDelete && request.status === "pending");
         return (
           <div className="table-actions">
             {canEdit ? (
               <Button size="sm" variant="secondary" onClick={() => actions.openEdit("leaveRequests", request)}>신청 수정</Button>
             ) : null}
-            {canReview ? (
+            {canReview && request.status === "pending" ? (
               <>
-              <Button size="sm" variant="secondary" disabled={request.status === "approved"} onClick={() => actions.confirmUpdate("leaveRequests", request, { status: "approved" }, "휴가 상태")}>
+              <Button size="sm" variant="secondary" onClick={() => actions.confirmUpdate("leaveRequests", request, { status: "approved" }, "휴가 상태")}>
                 승인
               </Button>
-              <Button size="sm" variant="secondary" disabled={request.status === "rejected"} onClick={() => actions.confirmUpdate("leaveRequests", request, { status: "rejected" }, "휴가 상태")}>
+              <Button size="sm" variant="secondary" onClick={() => actions.confirmUpdate("leaveRequests", request, { status: "rejected" }, "휴가 상태")}>
                 반려
               </Button>
               </>
@@ -77,7 +78,7 @@ export default function LeavePage({ data, currentUser, actions }) {
             {canDelete && request.status === "pending" ? (
               <Button size="sm" variant="danger" onClick={() => actions.deleteItem("leaveRequests", request.id, "휴가 신청")}>신청 삭제</Button>
             ) : null}
-            {!canEdit && !canReview && !canDelete ? "-" : null}
+            {!hasAction ? "-" : null}
           </div>
         );
       },

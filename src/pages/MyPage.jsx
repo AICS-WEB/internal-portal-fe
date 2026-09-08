@@ -6,7 +6,7 @@ export default function MyPage({ currentUser, actions }) {
   return (
     <div className="page-stack">
       <SectionHeader
-        title="My Page"
+        title="내 정보"
         description="내 프로필과 공개 여부를 관리합니다."
         actions={
           <>
@@ -34,43 +34,43 @@ export default function MyPage({ currentUser, actions }) {
           <SectionHeader title="프로필 정보" />
           <dl className="detail-grid">
             <div>
-              <dt>student_id</dt>
+              <dt>학번</dt>
               <dd>{currentUser.student_id}</dd>
             </div>
             <div>
-              <dt>department</dt>
+              <dt>소속 학과</dt>
               <dd>{currentUser.department}</dd>
             </div>
             <div>
-              <dt>program</dt>
+              <dt>과정</dt>
               <dd>{currentUser.program}</dd>
             </div>
             <div>
-              <dt>enrollment_year</dt>
+              <dt>입학 연도</dt>
               <dd>{currentUser.enrollment_year}</dd>
             </div>
             <div>
-              <dt>research_topic</dt>
+              <dt>연구 주제</dt>
               <dd>{currentUser.research_topic}</dd>
             </div>
             <div>
-              <dt>github_url</dt>
+              <dt>GitHub 주소</dt>
               <dd>{currentUser.github_url || "-"}</dd>
             </div>
             <div>
-              <dt>linkedin_url</dt>
+              <dt>LinkedIn 주소</dt>
               <dd>{currentUser.linkedin_url || "-"}</dd>
             </div>
             <div>
-              <dt>phone</dt>
+              <dt>연락처</dt>
               <dd>{currentUser.phone || "-"}</dd>
             </div>
             <div>
-              <dt>preferred_language</dt>
-              <dd>{currentUser.preferred_language || "ko"}</dd>
+              <dt>선호 언어</dt>
+              <dd>{currentUser.preferred_language === "en" ? "영어" : "한국어"}</dd>
             </div>
           </dl>
-          <p className="muted-note">phone은 연구실 내부 연락을 위한 전용 정보입니다.</p>
+          <p className="muted-note">연락처는 연구실 내부 연락에만 사용합니다.</p>
           <p className="profile-bio">{currentUser.bio || "등록된 소개가 없습니다."}</p>
         </article>
       </section>

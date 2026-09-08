@@ -3,6 +3,7 @@ import { hasRole } from "../utils/permissions.js";
 import Badge from "./Badge.jsx";
 import Button from "./Button.jsx";
 import Modal from "./Modal.jsx";
+import { formatDateTime, formatLabel } from "../utils/format.js";
 
 const notificationTypes = ["general", "notice_created", "leave_requested", "purchase_requested"];
 
@@ -13,6 +14,7 @@ export default function NotificationCenterModal({
   onClose,
   onMarkAllRead,
   onMarkRead,
+  onOpen,
   onSend,
 }) {
   const [filter, setFilter] = useState("all");
@@ -103,7 +105,7 @@ export default function NotificationCenterModal({
             <label className="field">
               <span>알림 유형</span>
               <select value={compose.type} onChange={(event) => setCompose((value) => ({ ...value, type: event.target.value }))}>
-                {notificationTypes.map((type) => <option key={type} value={type}>{type}</option>)}
+                {notificationTypes.map((type) => <option key={type} value={type}>{formatLabel(type)}</option>)}
               </select>
             </label>
             <label className="field">
@@ -122,15 +124,27 @@ export default function NotificationCenterModal({
 
       <div className="notification-list">
         {rows.length ? rows.map((notification) => (
-          <article key={notification.id} className={`notification-item ${notification.read ? "" : "unread"}`}>
+          <article
+            key={notification.id}
+            className={`notification-item ${notification.read ? "" : "unread"}`}
+            role="button"
+            tabIndex={0}
+            onClick={() => onOpen(notification)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                onOpen(notification);
+              }
+            }}
+          >
             <span className="notification-dot" aria-hidden="true" />
             <div>
               <strong>{notification.title}</strong>
               <p>{notification.message}</p>
-              <small>{notification.created_at}</small>
+              <small>{formatDateTime(notification.created_at)}</small>
             </div>
             {!notification.read ? (
-              <Button size="sm" variant="ghost" disabled={readingId === notification.id} onClick={() => readNotification(notification.id)}>
+              <Button size="sm" variant="ghost" disabled={readingId === notification.id} onClick={(event) => { event.stopPropagation(); readNotification(notification.id); }}>
                 {readingId === notification.id ? "처리 중..." : "읽음 처리"}
               </Button>
             ) : null}

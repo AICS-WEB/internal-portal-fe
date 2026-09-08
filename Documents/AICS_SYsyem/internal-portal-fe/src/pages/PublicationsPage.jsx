@@ -41,7 +41,7 @@ export default function PublicationsPage({ data, currentUser, actions }) {
     },
     { key: "year", header: "연도" },
     { key: "venue", header: "게재지" },
-    { key: "pub_type", header: "유형" },
+    { key: "pub_type", header: "유형", render: (item) => <Badge value={item.pub_type} /> },
     { key: "status", header: "상태", render: (item) => <Badge value={item.status} /> },
     { key: "is_public", header: "공개", render: (item) => <Badge value={item.is_public ? "public" : "private"} /> },
     {

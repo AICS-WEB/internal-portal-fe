@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import Badge from "../components/Badge.jsx";
+import { getLabel } from "../components/Badge.jsx";
 import Button from "../components/Button.jsx";
 import DataTable from "../components/DataTable.jsx";
 import SectionHeader from "../components/SectionHeader.jsx";
@@ -22,7 +23,18 @@ export default function AttendancePage({ data, currentUser, actions }) {
     actions.openForm({
       title: "출결 수정",
       fields: [
-        { name: "status", label: "상태", type: "select", options: ["present", "late", "absent", "leave", "half_leave"] },
+        {
+          name: "status",
+          label: "상태",
+          type: "select",
+          options: [
+            { value: "present", label: "출석" },
+            { value: "late", label: "지각" },
+            { value: "absent", label: "결석" },
+            { value: "leave", label: "휴가" },
+            { value: "half_leave", label: "반차" },
+          ],
+        },
         { name: "check_in", label: "출근 시각", type: "time" },
         { name: "check_out", label: "퇴근 시각", type: "time" },
       ],
@@ -65,7 +77,7 @@ export default function AttendancePage({ data, currentUser, actions }) {
       <SectionHeader title="근태" description="날짜별 출결 상태와 최근 출결 기록을 관리합니다." />
 
       <section className="summary-grid three">
-        <StatCard label="오늘 내 상태" value={todayRecord ? "기록 있음" : "기록 없음"} note={todayRecord?.status || "출근 전"} />
+        <StatCard label="오늘 내 상태" value={todayRecord ? "기록 있음" : "기록 없음"} note={todayRecord ? getLabel(todayRecord.status) : "출근 전"} />
         <StatCard label="오늘 출석" value={`${todayRows.filter((record) => ["present", "late"].includes(record.status)).length}명`} note="출석·지각 포함" tone="success" />
         <StatCard label="휴가/반차" value={`${todayRows.filter((record) => ["leave", "half_leave"].includes(record.status)).length}명`} note="오늘 기준" tone="warning" />
       </section>

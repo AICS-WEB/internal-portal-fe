@@ -1,4 +1,4 @@
-const labelMap = {
+export const labelMap = {
   general: "일반",
   important: "중요",
   account_info: "계정",
@@ -48,7 +48,23 @@ const labelMap = {
   sick: "병가",
   public: "공개",
   private: "비공개",
+  sci: "SCI",
+  kci: "KCI",
+  intl_conf: "국제 학회",
+  domestic_conf: "국내 학회",
+  undergrad: "학부",
+  master: "석사",
+  phd: "박사",
+  professor: "교수",
+  ko: "한국어",
+  en: "영어",
+  unknown: "알 수 없음",
 };
+
+export function getLabel(value) {
+  const key = String(value || "").toLowerCase();
+  return labelMap[key] || value || "-";
+}
 
 const toneMap = {
   important: "danger",
@@ -77,5 +93,5 @@ export default function Badge({ value, children, tone }) {
   const key = String(value || "").toLowerCase();
   const badgeTone = tone || toneMap[key] || "neutral";
 
-  return <span className={`badge badge-${badgeTone}`}>{children || labelMap[key] || value}</span>;
+  return <span className={`badge badge-${badgeTone}`}>{children || getLabel(value)}</span>;
 }

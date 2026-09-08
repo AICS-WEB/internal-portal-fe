@@ -110,8 +110,8 @@ function uid(prefix) {
   return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 }
 
-function option(value, label = value) {
-  return { value, label };
+function option(value, label) {
+  return label === undefined ? { value } : { value, label };
 }
 
 const fieldLabelMap = {
@@ -138,7 +138,15 @@ const optionLabelMap = {
   department: "학과", research: "연구비", active: "진행", completed: "완료", pending: "대기", member: "구성원",
   manager: "관리자", admin: "최고 관리자", present: "출석", late: "지각", absent: "결석", leave: "휴가", half_leave: "반차",
   undergrad: "학부", master: "석사", phd: "박사", professor: "교수", ko: "한국어", en: "영어", unknown: "알 수 없음",
+  all: "전체", latest: "최신순", views: "조회순", pinned: "고정 우선", intl_conf: "국제 학회", domestic_conf: "국내 학회",
+  half: "반차", modify: "회차 수정", cancel: "회차 취소", personnel: "인건비", activity: "활동비", material: "재료비",
+  completed: "완료", department: "학과", wifi: "와이파이", server: "서버", cloud: "클라우드", license: "라이선스",
 };
+
+function displayLabel(value) {
+  if (value === "") return "";
+  return optionLabelMap[String(value)] || String(value);
+}
 
 function buildResourceConfigs(currentUser, data) {
   return {
@@ -531,7 +539,7 @@ function FormModal({ modal, onClose, onSubmit, submitting = false }) {
                             ? [...selected, optionValue]
                             : selected.filter((itemValue) => itemValue !== optionValue))}
                         />
-                        <span>{optionItem.label || optionLabelMap[optionValue] || optionValue}</span>
+                        <span>{optionItem.label || displayLabel(optionValue)}</span>
                       </label>
                     );
                   })}
@@ -550,7 +558,7 @@ function FormModal({ modal, onClose, onSubmit, submitting = false }) {
                     const optionItem = typeof item === "string" ? option(item) : item;
                     return (
                       <option key={optionItem.value} value={optionItem.value}>
-                        {optionItem.label || optionLabelMap[optionItem.value] || optionItem.value}
+                        {optionItem.label || displayLabel(optionItem.value)}
                       </option>
                     );
                   })}
@@ -582,8 +590,8 @@ function DetailModal({ detail, onClose }) {
       <dl className="detail-grid">
         {content.map((item) => (
           <div key={item.label}>
-            <dt>{item.label}</dt>
-            <dd>{typeof item.value === "boolean" ? (item.value ? "true" : "false") : String(item.value || "-")}</dd>
+            <dt>{fieldLabelMap[item.label] || item.label}</dt>
+            <dd>{typeof item.value === "boolean" ? (item.value ? "예" : "아니오") : displayLabel(item.value || "-")}</dd>
           </div>
         ))}
       </dl>

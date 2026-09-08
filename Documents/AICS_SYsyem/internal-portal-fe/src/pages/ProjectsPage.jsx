@@ -5,6 +5,7 @@ import FilterTabs from "../components/FilterTabs.jsx";
 import SearchInput from "../components/SearchInput.jsx";
 import SectionHeader from "../components/SectionHeader.jsx";
 import { canManageContent, hasRole } from "../utils/permissions.js";
+import { getLabel } from "../components/Badge.jsx";
 
 export default function ProjectsPage({ data, currentUser, actions, globalSearch }) {
   const [search, setSearch] = useState("");
@@ -13,7 +14,7 @@ export default function ProjectsPage({ data, currentUser, actions, globalSearch 
   const statusOptions = useMemo(() => [
     { value: "all", label: "전체" },
     ...[...new Set(data.researchProjects.map((project) => project.status).filter(Boolean))]
-      .map((value) => ({ value, label: value })),
+      .map((value) => ({ value, label: getLabel(value) })),
   ], [data.researchProjects]);
 
   const projects = useMemo(() => {

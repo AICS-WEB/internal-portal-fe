@@ -1,4 +1,5 @@
 import BrandMark from "./BrandMark.jsx";
+import { getLabel } from "./Badge.jsx";
 import { hasRole } from "../utils/permissions.js";
 
 const menuItems = [
@@ -49,7 +50,7 @@ export default function Sidebar({ activePage, onNavigate, isOpen, onClose, curre
           <div className="avatar">{currentUser.name.slice(0, 1)}</div>
           <div>
             <strong>{currentUser.name}</strong>
-            <span>{currentUser.role}</span>
+            <span>{getLabel(currentUser.role)}</span>
           </div>
         </div>
       </aside>

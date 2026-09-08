@@ -70,18 +70,18 @@ export default function LoginPage({ onLogin, onRegister }) {
             <BrandMark />
             <span>
               <strong>AICS Lab Hub</strong>
-              <small>Internal Portal</small>
+              <small>내부 운영 포털</small>
             </span>
           </div>
           <div className="auth-visual-copy">
-            <p className="register-eyebrow">AICS LAB WORKSPACE</p>
+            <p className="register-eyebrow">AICS 연구실 업무 공간</p>
             <h1>연구와 운영을<br />하나의 흐름으로</h1>
             <p>연구실 일정, 출결, 연구 성과와 내부 자료를 한 곳에서 관리하세요.</p>
           </div>
           <div className="auth-feature-list">
-            <span>Research Management</span>
-            <span>Lab Operations</span>
-            <span>Team Collaboration</span>
+            <span>연구 관리</span>
+            <span>연구실 운영</span>
+            <span>구성원 협업</span>
           </div>
         </div>
 
@@ -139,15 +139,6 @@ export default function LoginPage({ onLogin, onRegister }) {
             <label className="field">
               <span className="field-label-row">
                 <span>비밀번호</span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setResetEmail(email);
-                    setResetMode(true);
-                  }}
-                >
-                  비밀번호를 잊으셨나요?
-                </button>
               </span>
               <input
                 type="password"
@@ -159,6 +150,16 @@ export default function LoginPage({ onLogin, onRegister }) {
                 }}
                 placeholder="비밀번호 입력"
               />
+              <button
+                type="button"
+                className="forgot-password-link"
+                onClick={() => {
+                  setResetEmail(email);
+                  setResetMode(true);
+                }}
+              >
+                비밀번호를 잊으셨나요?
+              </button>
             </label>
 
             {error ? <div className="register-submit-error" role="alert">{error}</div> : null}

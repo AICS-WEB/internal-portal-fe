@@ -97,7 +97,7 @@ export default function RegisterPage({ onBack }) {
       <main className="register-shell">
         <section className="register-success-card">
           <div className="register-success-icon" aria-hidden="true">✓</div>
-          <p className="register-eyebrow">AICS LAB MEMBERSHIP</p>
+          <p className="register-eyebrow">AICS 연구실 회원</p>
           <h1>가입 신청이 완료되었습니다</h1>
           <p>
             <strong>{registeredUser.name || values.name}</strong>님의 신청을 접수했습니다.
@@ -121,11 +121,11 @@ export default function RegisterPage({ onBack }) {
             <BrandMark />
             <span>
               <strong>AICS Lab Hub</strong>
-              <small>Internal Portal</small>
+              <small>내부 운영 포털</small>
             </span>
           </button>
           <div className="register-intro-copy">
-            <p className="register-eyebrow">JOIN THE LAB</p>
+            <p className="register-eyebrow">연구실 가입</p>
             <h1>연구실 구성원 가입 신청</h1>
             <p>기본 정보와 연구 정보를 입력하면 관리자 검토 후 내부 포털 계정이 활성화됩니다.</p>
           </div>
@@ -139,7 +139,7 @@ export default function RegisterPage({ onBack }) {
         <section className="register-card">
           <div className="register-card-header">
             <div>
-              <p className="register-eyebrow">MEMBER REGISTRATION</p>
+              <p className="register-eyebrow">회원가입 신청</p>
               <h2>회원가입</h2>
               <p>별표(*)가 표시된 항목은 필수입니다.</p>
             </div>

@@ -54,9 +54,9 @@ export default function AdminPage({ data, currentUser, actions }) {
           disabled={Number(user.id) === Number(currentUser.id)}
           onChange={(event) => actions.updateItem("users", user.id, { role: event.target.value })}
         >
-          <option value="member">member</option>
-          <option value="manager">manager</option>
-          <option value="admin">admin</option>
+          <option value="member">구성원</option>
+          <option value="manager">관리자</option>
+          <option value="admin">최고 관리자</option>
         </select>
       ),
     },
@@ -70,10 +70,10 @@ export default function AdminPage({ data, currentUser, actions }) {
           disabled={Number(user.id) === Number(currentUser.id)}
           onChange={(event) => actions.updateItem("users", user.id, { account_status: event.target.value })}
         >
-          <option value="pending">pending</option>
-          <option value="approved">approved</option>
-          <option value="rejected">rejected</option>
-          <option value="deactivated">deactivated</option>
+          <option value="pending">대기</option>
+          <option value="approved">승인</option>
+          <option value="rejected">반려</option>
+          <option value="deactivated">비활성</option>
         </select>
       ),
     },
@@ -82,7 +82,7 @@ export default function AdminPage({ data, currentUser, actions }) {
 
   return (
     <div className="page-stack">
-      <SectionHeader title="Admin" description="가입 승인, 사용자 역할과 계정 상태를 관리합니다." />
+      <SectionHeader title="관리" description="가입 승인, 사용자 역할과 계정 상태를 관리합니다." />
       <section className="panel">
         <SectionHeader title="사용자 승인 대기" />
         <DataTable columns={pendingColumns} rows={pendingUsers} emptyTitle="승인 대기 중인 사용자가 없습니다." />

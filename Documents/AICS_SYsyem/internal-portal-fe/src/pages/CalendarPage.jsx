@@ -39,7 +39,7 @@ export default function CalendarPage({ data, actions }) {
   return (
     <div className="page-stack">
       <SectionHeader
-        title="Calendar"
+        title="일정"
         description="공유 일정과 개인 일정을 함께 확인합니다."
         actions={
           <div className="button-row">

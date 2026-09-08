@@ -73,7 +73,7 @@ export default function CredentialsPage({ data, currentUser, actions }) {
   return (
     <div className="page-stack">
       <SectionHeader
-        title="Credentials"
+        title="공용 계정"
         description="공용 계정과 비밀번호를 권한 기반으로 관리합니다."
         actions={
           <Button variant="primary" onClick={() => actions.openCreate("sharedCredentials")}>

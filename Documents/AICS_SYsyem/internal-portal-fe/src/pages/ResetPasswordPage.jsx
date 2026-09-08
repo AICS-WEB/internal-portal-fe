@@ -49,24 +49,24 @@ export default function ResetPasswordPage({ onBackToLogin }) {
             <BrandMark />
             <span>
               <strong>AICS Lab Hub</strong>
-              <small>Internal Portal</small>
+              <small>내부 운영 포털</small>
             </span>
           </div>
           <div className="auth-visual-copy">
-            <p className="register-eyebrow">ACCOUNT SECURITY</p>
+            <p className="register-eyebrow">계정 보안</p>
             <h1>안전하게<br />다시 시작하세요</h1>
             <p>새 비밀번호를 설정하면 이전 비밀번호로는 더 이상 로그인할 수 없습니다.</p>
           </div>
           <div className="auth-feature-list">
-            <span>One-time link</span>
-            <span>Secure password</span>
-            <span>60-minute expiry</span>
+            <span>일회용 링크</span>
+            <span>안전한 비밀번호</span>
+            <span>60분 만료</span>
           </div>
         </div>
 
         <div className="login-card">
           <div className="login-card-copy">
-            <p className="register-eyebrow">PASSWORD RESET</p>
+            <p className="register-eyebrow">비밀번호 재설정</p>
             <h2>{completed ? "변경 완료" : "새 비밀번호 설정"}</h2>
             <p>
               {completed

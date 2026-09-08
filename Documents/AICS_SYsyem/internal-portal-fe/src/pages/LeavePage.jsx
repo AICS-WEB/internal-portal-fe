@@ -5,6 +5,7 @@ import DataTable from "../components/DataTable.jsx";
 import FilterTabs from "../components/FilterTabs.jsx";
 import SectionHeader from "../components/SectionHeader.jsx";
 import StatCard from "../components/StatCard.jsx";
+import { formatDateOnly } from "../utils/format.js";
 import { hasRole } from "../utils/permissions.js";
 
 const statusOptions = [
@@ -13,6 +14,8 @@ const statusOptions = [
   { value: "approved", label: "승인" },
   { value: "rejected", label: "반려" },
 ];
+
+const halfPeriodLabels = { am: "오전", pm: "오후" };
 
 export default function LeavePage({ data, currentUser, actions }) {
   const [status, setStatus] = useState("all");
@@ -47,8 +50,12 @@ export default function LeavePage({ data, currentUser, actions }) {
   const columns = [
     { key: "user_name", header: "신청자" },
     { key: "leave_type", header: "유형", render: (request) => <Badge value={request.leave_type} /> },
-    { key: "period", header: "기간", render: (request) => `${request.start_date} - ${request.end_date}` },
-    { key: "half_period", header: "반차" },
+    {
+      key: "period",
+      header: "기간",
+      render: (request) => `${formatDateOnly(request.start_date)} - ${formatDateOnly(request.end_date)}`,
+    },
+    { key: "half_period", header: "반차 시간", render: (request) => halfPeriodLabels[request.half_period] || "-" },
     { key: "reason", header: "사유" },
     { key: "status", header: "상태", render: (request) => <Badge value={request.status} /> },
     {

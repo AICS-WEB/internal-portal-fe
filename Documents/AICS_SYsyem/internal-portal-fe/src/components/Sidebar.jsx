@@ -25,7 +25,7 @@ export default function Sidebar({ activePage, onNavigate, isOpen, onClose, curre
           <BrandMark />
           <div>
             <strong>AICS Lab Hub</strong>
-            <span>Internal Portal</span>
+            <span>내부 운영 포털</span>
           </div>
         </div>
 

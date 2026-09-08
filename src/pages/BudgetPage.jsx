@@ -4,7 +4,7 @@ import DataTable from "../components/DataTable.jsx";
 import Pagination from "../components/Pagination.jsx";
 import SectionHeader from "../components/SectionHeader.jsx";
 import { usePagedList } from "../hooks/usePagedList.js";
-import { formatCurrency } from "../utils/format.js";
+import { formatCurrency, formatDateOnly, formatDateRange } from "../utils/format.js";
 import { hasRole } from "../utils/permissions.js";
 
 export default function BudgetPage({ data, currentUser, actions }) {
@@ -23,17 +23,17 @@ export default function BudgetPage({ data, currentUser, actions }) {
     },
     { key: "category", header: "분류", render: (expense) => <Badge value={expense.category} /> },
     { key: "amount", header: "금액", render: (expense) => formatCurrency(expense.amount) },
-    { key: "date", header: "일자" },
+    { key: "date", header: "일자", render: (expense) => formatDateOnly(expense.date) },
     { key: "status", header: "상태", render: (expense) => <Badge value={expense.status} /> },
     {
       key: "actions",
       header: "작업",
       render: (expense) => (
         <div className="table-actions">
-          {canManage && expense.status === "pending" ? (
+          {canManage ? (
             <>
-              <Button size="sm" variant="secondary" onClick={() => actions.updateItem("expenses", expense.id, { status: "approved" })}>지출 승인</Button>
-              <Button size="sm" variant="secondary" onClick={() => actions.updateItem("expenses", expense.id, { status: "rejected" })}>지출 반려</Button>
+              <Button size="sm" variant="secondary" disabled={expense.status === "approved"} onClick={() => actions.confirmUpdate("expenses", expense, { status: "approved" }, "지출 상태")}>지출 승인</Button>
+              <Button size="sm" variant="secondary" disabled={expense.status === "rejected"} onClick={() => actions.confirmUpdate("expenses", expense, { status: "rejected" }, "지출 상태")}>지출 반려</Button>
             </>
           ) : "-"}
         </div>
@@ -44,7 +44,7 @@ export default function BudgetPage({ data, currentUser, actions }) {
   return (
     <div className="page-stack">
       <SectionHeader
-        title="Budget"
+        title="예산"
         description="예산 사용 현황과 지출 승인 상태를 확인합니다."
         actions={
           <>
@@ -77,7 +77,7 @@ export default function BudgetPage({ data, currentUser, actions }) {
                 <span style={{ width: `${percent}%` }} />
               </div>
               <p>
-                {budget.start_date} - {budget.end_date}
+                {formatDateRange(budget.start_date, budget.end_date)}
               </p>
               {canManage ? (
                 <div className="table-actions">

@@ -8,6 +8,8 @@ import { hasRole } from "../utils/permissions.js";
 
 export default function AttendancePage({ data, currentUser, actions }) {
   const today = todayISO();
+  const [selectedDate, setSelectedDate] = useState(today);
+  const [showAll, setShowAll] = useState(false);
   const todayRecord = data.attendanceRecords.find((record) => record.user_id === currentUser.id && record.date === today);
   const todayRows = data.attendanceRecords.filter((record) => record.date === today);
   const canManage = hasRole(currentUser, "manager");
@@ -16,9 +18,13 @@ export default function AttendancePage({ data, currentUser, actions }) {
     actions.openForm({
       title: "출결 수정",
       fields: [
-        { name: "status", label: "status", type: "select", options: ["present", "late", "absent", "leave", "half_leave"] },
-        { name: "check_in", label: "check_in", type: "time" },
-        { name: "check_out", label: "check_out", type: "time" },
+        { name: "status", label: "출결 상태", type: "select", options: [
+          { value: "present", label: "출석" }, { value: "late", label: "지각" },
+          { value: "absent", label: "결석" }, { value: "leave", label: "휴가" },
+          { value: "half_leave", label: "반차" },
+        ] },
+        { name: "check_in", label: "출근 시간", type: "time" },
+        { name: "check_out", label: "퇴근 시간", type: "time" },
       ],
       initialValues: record,
       submitLabel: "저장",
@@ -56,7 +62,7 @@ export default function AttendancePage({ data, currentUser, actions }) {
 
   return (
     <div className="page-stack">
-      <SectionHeader title="Attendance" description="오늘 출결 상태와 최근 출결 기록을 관리합니다." />
+      <SectionHeader title="출결" description="오늘 출결 상태와 날짜별 출결 기록을 관리합니다." />
 
       <section className="summary-grid three">
         <StatCard label="오늘 내 상태" value={todayRecord ? "기록 있음" : "기록 없음"} note={todayRecord?.status || "출근 전"} />
@@ -82,7 +88,17 @@ export default function AttendancePage({ data, currentUser, actions }) {
         </div>
       </section>
 
-      <DataTable columns={columns} rows={data.attendanceRecords} />
+      <section className="toolbar-panel attendance-date-filter">
+        <label className="field">
+          <span>조회 날짜</span>
+          <input type="date" value={selectedDate} disabled={showAll} onChange={(event) => setSelectedDate(event.target.value)} />
+        </label>
+        <Button variant={showAll ? "primary" : "secondary"} onClick={() => setShowAll((value) => !value)}>
+          {showAll ? "선택 날짜만 보기" : "전체 기록 보기"}
+        </Button>
+      </section>
+      <DataTable columns={columns} rows={showAll ? data.attendanceRecords : data.attendanceRecords.filter((record) => record.date === selectedDate)} />
     </div>
   );
 }
+import { useState } from "react";

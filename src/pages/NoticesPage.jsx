@@ -6,6 +6,7 @@ import FilterTabs from "../components/FilterTabs.jsx";
 import SearchInput from "../components/SearchInput.jsx";
 import SectionHeader from "../components/SectionHeader.jsx";
 import { hasRole } from "../utils/permissions.js";
+import { formatDateOnly } from "../utils/format.js";
 
 const categoryOptions = [
   { value: "all", label: "전체" },
@@ -42,7 +43,7 @@ export default function NoticesPage({ data, currentUser, actions, globalSearch }
       header: "제목",
       render: (notice) => (
         <div className="cell-main">
-          <strong>{notice.title}</strong>
+          <button type="button" className="table-title-button" onClick={() => actions.openNoticeDetail(notice)}>{notice.title}</button>
           <span>{notice.content}</span>
         </div>
       ),
@@ -51,7 +52,7 @@ export default function NoticesPage({ data, currentUser, actions, globalSearch }
     { key: "category", header: "카테고리", render: (notice) => <Badge value={notice.category} /> },
     { key: "is_pinned", header: "고정", render: (notice) => (notice.is_pinned ? "고정" : "-") },
     { key: "views", header: "조회수" },
-    { key: "created_at", header: "작성일" },
+    { key: "created_at", header: "작성일", render: (notice) => formatDateOnly(notice.created_at) },
     {
       key: "actions",
       header: "작업",

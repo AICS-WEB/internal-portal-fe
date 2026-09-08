@@ -49,10 +49,10 @@ export default function PurchasesPage({ data, currentUser, actions }) {
         const hasWorkflowAction = canReview && ["pending", "approved", "purchased"].includes(item.status);
         return (
           <div className="table-actions">
-            {canReview && item.status === "pending" ? (
+            {canReview ? (
               <>
-                <Button size="sm" variant="secondary" onClick={() => actions.updateItem("purchaseRequests", item.id, { status: "approved" })}>승인</Button>
-                <Button size="sm" variant="secondary" onClick={() => actions.updateItem("purchaseRequests", item.id, { status: "rejected" })}>반려</Button>
+                <Button size="sm" variant="secondary" disabled={item.status === "approved"} onClick={() => actions.confirmUpdate("purchaseRequests", item, { status: "approved" }, "구매 신청 상태")}>승인</Button>
+                <Button size="sm" variant="secondary" disabled={item.status === "rejected"} onClick={() => actions.confirmUpdate("purchaseRequests", item, { status: "rejected" }, "구매 신청 상태")}>반려</Button>
               </>
             ) : null}
             {canReview && item.status === "approved" ? (
@@ -62,7 +62,7 @@ export default function PurchasesPage({ data, currentUser, actions }) {
               <Button size="sm" variant="secondary" onClick={() => actions.updateItem("purchaseRequests", item.id, { status: "delivered" })}>입고 완료 처리</Button>
             ) : null}
             {canEdit ? <Button size="sm" variant="secondary" onClick={() => actions.openEdit("purchaseRequests", item)}>수정</Button> : null}
-            {canDelete ? <Button size="sm" variant="danger" onClick={() => actions.deleteItem("purchaseRequests", item.id, "구매 신청")}>삭제</Button> : null}
+            {canDelete && item.status === "pending" ? <Button size="sm" variant="danger" onClick={() => actions.deleteItem("purchaseRequests", item.id, "구매 신청")}>삭제</Button> : null}
             {!hasWorkflowAction && !canEdit && !canDelete ? "-" : null}
           </div>
         );
@@ -73,7 +73,7 @@ export default function PurchasesPage({ data, currentUser, actions }) {
   return (
     <div className="page-stack">
       <SectionHeader
-        title="Purchases"
+        title="구매 신청"
         description="물품 구매 요청의 승인, 구매, 입고 상태를 관리합니다."
         actions={
           <Button variant="primary" onClick={() => actions.openCreate("purchaseRequests")}>

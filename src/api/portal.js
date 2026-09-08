@@ -357,8 +357,8 @@ export async function changeMyPassword(currentPassword, newPassword) {
   });
 }
 
-export async function revealCredential(id) {
-  return apiRequest(`/credentials/${id}/reveal`);
+export async function revealCredential(id, password) {
+  return apiRequest(`/credentials/${id}/reveal`, { method: "POST", body: { password } });
 }
 
 export async function logCredentialCopy(id) {

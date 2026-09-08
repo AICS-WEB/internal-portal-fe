@@ -6,6 +6,7 @@ import FilterTabs from "../components/FilterTabs.jsx";
 import SectionHeader from "../components/SectionHeader.jsx";
 import StatCard from "../components/StatCard.jsx";
 import { hasRole } from "../utils/permissions.js";
+import { formatDateRange, formatLabel } from "../utils/format.js";
 
 const statusOptions = [
   { value: "all", label: "전체" },
@@ -47,8 +48,8 @@ export default function LeavePage({ data, currentUser, actions }) {
   const columns = [
     { key: "user_name", header: "신청자" },
     { key: "leave_type", header: "유형", render: (request) => <Badge value={request.leave_type} /> },
-    { key: "period", header: "기간", render: (request) => `${request.start_date} - ${request.end_date}` },
-    { key: "half_period", header: "반차" },
+    { key: "period", header: "기간", render: (request) => formatDateRange(request.start_date, request.end_date) },
+    { key: "half_period", header: "반차 시간", render: (request) => request.leave_type === "half" ? formatLabel(request.half_period) : "해당 없음" },
     { key: "reason", header: "사유" },
     { key: "status", header: "상태", render: (request) => <Badge value={request.status} /> },
     {
@@ -63,17 +64,17 @@ export default function LeavePage({ data, currentUser, actions }) {
             {canEdit ? (
               <Button size="sm" variant="secondary" onClick={() => actions.openEdit("leaveRequests", request)}>신청 수정</Button>
             ) : null}
-            {canReview && request.status === "pending" ? (
+            {canReview ? (
               <>
-              <Button size="sm" variant="secondary" onClick={() => actions.updateItem("leaveRequests", request.id, { status: "approved" })}>
+              <Button size="sm" variant="secondary" disabled={request.status === "approved"} onClick={() => actions.confirmUpdate("leaveRequests", request, { status: "approved" }, "휴가 상태")}>
                 승인
               </Button>
-              <Button size="sm" variant="secondary" onClick={() => actions.updateItem("leaveRequests", request.id, { status: "rejected" })}>
+              <Button size="sm" variant="secondary" disabled={request.status === "rejected"} onClick={() => actions.confirmUpdate("leaveRequests", request, { status: "rejected" }, "휴가 상태")}>
                 반려
               </Button>
               </>
             ) : null}
-            {canDelete ? (
+            {canDelete && request.status === "pending" ? (
               <Button size="sm" variant="danger" onClick={() => actions.deleteItem("leaveRequests", request.id, "휴가 신청")}>신청 삭제</Button>
             ) : null}
             {!canEdit && !canReview && !canDelete ? "-" : null}
@@ -86,7 +87,7 @@ export default function LeavePage({ data, currentUser, actions }) {
   return (
     <div className="page-stack">
       <SectionHeader
-        title="Leave"
+        title="휴가 관리"
         description="휴가 잔여일과 신청 상태를 관리합니다."
         actions={
           <Button variant="primary" onClick={() => actions.openCreate("leaveRequests")}>

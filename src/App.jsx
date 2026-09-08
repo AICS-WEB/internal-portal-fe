@@ -64,7 +64,7 @@ import PublicationsPage from "./pages/PublicationsPage.jsx";
 import PurchasesPage from "./pages/PurchasesPage.jsx";
 import RegisterPage from "./pages/RegisterPage.jsx";
 import ResetPasswordPage from "./pages/ResetPasswordPage.jsx";
-import { todayISO } from "./utils/format.js";
+import { formatDateOnly, formatDateTime, formatLabel, todayISO } from "./utils/format.js";
 import { canAccess, hasRole } from "./utils/permissions.js";
 
 const pageRegistry = {
@@ -100,6 +100,8 @@ const initialData = {
   notifications: [],
 };
 
+const IDLE_TIMEOUT_MS = Number(import.meta.env.VITE_IDLE_TIMEOUT_MINUTES || 30) * 60 * 1000;
+
 function cloneData(data) {
   return Object.fromEntries(Object.entries(data).map(([key, value]) => [key, value.map((item) => ({ ...item }))]));
 }
@@ -121,14 +123,14 @@ function buildResourceConfigs(currentUser, data) {
       submitEdit: "저장",
       defaults: { category: "general", is_pinned: false },
       fields: [
-        { name: "title", label: "title", type: "text" },
+        { name: "title", label: "제목", type: "text" },
         {
           name: "category",
-          label: "category",
+          label: "분류",
           type: "select",
-          options: ["general", "important", "account_info", "schedule"],
+          options: [option("general", "일반"), option("important", "중요"), option("account_info", "계정 안내"), option("schedule", "일정")],
         },
-        { name: "content", label: "content", type: "textarea" },
+        { name: "content", label: "내용", type: "textarea" },
         {
           name: "attachment_files",
           label: "첨부파일",
@@ -136,7 +138,7 @@ function buildResourceConfigs(currentUser, data) {
           multiple: true,
           help: "선택한 파일은 Supabase Storage에 업로드된 뒤 공지 첨부로 저장됩니다.",
         },
-        { name: "is_pinned", label: "is_pinned", type: "checkbox" },
+        { name: "is_pinned", label: "상단에 고정", type: "checkbox" },
       ],
       create: (values) => ({
         id: uid("notice"),
@@ -157,15 +159,15 @@ function buildResourceConfigs(currentUser, data) {
         is_recurring: false,
       },
       fields: [
-        { name: "title", label: "title", type: "text" },
-        { name: "description", label: "description", type: "textarea" },
-        { name: "event_type", label: "event_type", type: "select", options: ["meeting", "deadline", "event", "trip", "other"] },
-        { name: "scope", label: "scope", type: "select", options: ["shared", "personal"] },
-        { name: "start_datetime", label: "start_datetime", type: "datetime-local" },
-        { name: "end_datetime", label: "end_datetime", type: "datetime-local" },
-        { name: "location", label: "location", type: "text" },
-        { name: "is_recurring", label: "is_recurring", type: "checkbox" },
-        { name: "recurrence_rule", label: "recurrence_rule", type: "text" },
+        { name: "title", label: "일정명", type: "text" },
+        { name: "description", label: "설명", type: "textarea" },
+        { name: "event_type", label: "일정 유형", type: "select", options: [option("meeting", "회의"), option("deadline", "마감"), option("event", "행사"), option("trip", "출장"), option("other", "기타")] },
+        { name: "scope", label: "공개 범위", type: "select", options: [option("shared", "공유"), option("personal", "개인")] },
+        { name: "start_datetime", label: "시작 일시", type: "datetime-local" },
+        { name: "end_datetime", label: "종료 일시", type: "datetime-local" },
+        { name: "location", label: "장소", type: "text" },
+        { name: "is_recurring", label: "반복 일정", type: "checkbox" },
+        { name: "recurrence_rule", label: "반복 규칙", type: "text", hidden: (values) => !values.is_recurring },
       ],
       create: (values) => ({ id: uid("event"), ...values }),
     },
@@ -174,11 +176,11 @@ function buildResourceConfigs(currentUser, data) {
       editTitle: "휴가 신청 수정",
       defaults: { leave_type: "annual", half_period: "", start_date: todayISO(), end_date: todayISO(), status: "pending" },
       fields: [
-        { name: "leave_type", label: "leave_type", type: "select", options: ["annual", "half", "other"] },
-        { name: "half_period", label: "half_period", type: "select", options: ["", "am", "pm"] },
-        { name: "start_date", label: "start_date", type: "date" },
-        { name: "end_date", label: "end_date", type: "date" },
-        { name: "reason", label: "reason", type: "textarea" },
+        { name: "leave_type", label: "휴가 유형", type: "select", options: [option("annual", "연차"), option("half", "반차"), option("other", "기타")] },
+        { name: "half_period", label: "반차 시간", type: "select", options: [option("", "선택"), option("am", "오전"), option("pm", "오후")], hidden: (values) => values.leave_type !== "half" },
+        { name: "start_date", label: "시작일", type: "date" },
+        { name: "end_date", label: "종료일", type: "date", hidden: (values) => values.leave_type === "half" },
+        { name: "reason", label: "사유", type: "textarea" },
       ],
       create: (values) => ({
         id: uid("leave"),
@@ -220,8 +222,8 @@ function buildResourceConfigs(currentUser, data) {
       editTitle: "논문 수정",
       defaults: { year: String(new Date().getFullYear()), pub_type: "intl_conf", status: "writing", is_public: false, author_user_ids: [] },
       fields: [
-        { name: "title", label: "title", type: "text" },
-        { name: "authors_text", label: "authors_text", type: "text" },
+        { name: "title", label: "논문 제목", type: "text" },
+        { name: "authors_text", label: "전체 저자", type: "text" },
         {
           name: "author_user_ids",
           label: "내부 저자 연결",
@@ -231,11 +233,11 @@ function buildResourceConfigs(currentUser, data) {
             .map((user) => option(user.id, `${user.name} · ${user.email}`)),
           help: "선택한 순서대로 내부 저자가 연결됩니다.",
         },
-        { name: "year", label: "year", type: "text" },
-        { name: "published_date", label: "published_date", type: "date" },
-        { name: "pub_type", label: "pub_type", type: "select", options: ["sci", "kci", "intl_conf", "domestic_conf"] },
-        { name: "status", label: "status", type: "select", options: ["writing", "submitted", "under_review", "accepted", "published"] },
-        { name: "venue", label: "venue", type: "text" },
+        { name: "year", label: "연도", type: "number" },
+        { name: "published_date", label: "게재일", type: "date" },
+        { name: "pub_type", label: "논문 유형", type: "select", options: [option("sci", "SCI급 국제학술지"), option("kci", "KCI 등재지"), option("intl_conf", "국제학술대회"), option("domestic_conf", "국내학술대회")] },
+        { name: "status", label: "진행 상태", type: "select", options: [option("writing", "작성 중"), option("submitted", "제출"), option("under_review", "심사 중"), option("accepted", "채택"), option("published", "게재 완료")] },
+        { name: "venue", label: "게재지", type: "text" },
         { name: "doi", label: "doi", type: "text" },
         {
           name: "attachment_files",
@@ -244,7 +246,7 @@ function buildResourceConfigs(currentUser, data) {
           multiple: true,
           help: "원문·증빙 파일을 Supabase Storage에 업로드하고 논문 첨부로 등록합니다.",
         },
-        { name: "is_public", label: "is_public", type: "checkbox" },
+        { name: "is_public", label: "외부 홈페이지에 공개", type: "checkbox" },
       ],
       create: (values) => ({ id: uid("pub"), ...values }),
     },
@@ -260,14 +262,14 @@ function buildResourceConfigs(currentUser, data) {
           multiple: false,
           help: "파일을 선택하면 Supabase Storage 업로드 후 아래 파일 정보가 자동으로 채워집니다.",
         },
-        { name: "title", label: "title", type: "text" },
-        { name: "description", label: "description", type: "textarea" },
-        { name: "category", label: "category", type: "select", options: ["paper", "presentation", "template", "software", "other"] },
-        { name: "min_role", label: "min_role", type: "select", options: ["member", "manager", "admin"] },
-        { name: "filename", label: "filename", type: "text" },
-        { name: "file_url", label: "file_url", type: "url" },
-        { name: "mime_type", label: "mime_type", type: "text" },
-        { name: "filesize", label: "filesize", type: "number" },
+        { name: "title", label: "자료명", type: "text" },
+        { name: "description", label: "설명", type: "textarea" },
+        { name: "category", label: "분류", type: "select", options: [option("paper", "논문"), option("presentation", "발표 자료"), option("template", "서식"), option("software", "소프트웨어"), option("other", "기타")] },
+        { name: "min_role", label: "열람 가능 권한", type: "select", options: [option("member", "일반 구성원"), option("manager", "관리자"), option("admin", "최고 관리자")] },
+        { name: "filename", label: "파일명", type: "text" },
+        { name: "file_url", label: "파일 주소", type: "url" },
+        { name: "mime_type", label: "파일 형식", type: "text" },
+        { name: "filesize", label: "파일 크기(바이트)", type: "number" },
       ],
       create: (values) => ({ id: uid("file"), ...values, download_count: 0, uploaded_at: todayISO() }),
     },
@@ -276,11 +278,11 @@ function buildResourceConfigs(currentUser, data) {
       editTitle: "구매 신청 수정",
       defaults: { quantity: 1, estimated_price: 0, status: "pending" },
       fields: [
-        { name: "item_name", label: "item_name", type: "text" },
-        { name: "quantity", label: "quantity", type: "number" },
-        { name: "estimated_price", label: "estimated_price", type: "number" },
-        { name: "purchase_url", label: "purchase_url", type: "url" },
-        { name: "reason", label: "reason", type: "textarea" },
+        { name: "item_name", label: "물품명", type: "text" },
+        { name: "quantity", label: "수량", type: "number" },
+        { name: "estimated_price", label: "예상 금액", type: "number" },
+        { name: "purchase_url", label: "구매 링크", type: "url" },
+        { name: "reason", label: "신청 사유", type: "textarea" },
       ],
       create: (values) => ({
         id: uid("purchase"),
@@ -328,10 +330,10 @@ function buildResourceConfigs(currentUser, data) {
           type: "select",
           options: data.budgets.map((budget) => option(budget.id, budget.name)),
         },
-        { name: "category", label: "category", type: "select", options: ["personnel", "activity", "material", "other"] },
-        { name: "item_name", label: "item_name", type: "text" },
-        { name: "amount", label: "amount", type: "number" },
-        { name: "date", label: "date", type: "date" },
+        { name: "category", label: "지출 분류", type: "select", options: [option("personnel", "인건비"), option("activity", "활동비"), option("material", "재료비"), option("other", "기타")] },
+        { name: "item_name", label: "지출 항목", type: "text" },
+        { name: "amount", label: "금액", type: "number" },
+        { name: "date", label: "지출일", type: "date" },
         {
           name: "receipt_files",
           label: "영수증",
@@ -348,13 +350,13 @@ function buildResourceConfigs(currentUser, data) {
       editTitle: "공용 계정 수정",
       defaults: { category: "other", min_role: "member" },
       fields: [
-        { name: "title", label: "title", type: "text" },
-        { name: "category", label: "category", type: "select", options: ["wifi", "server", "cloud", "license", "other"] },
-        { name: "username", label: "username", type: "text" },
-        { name: "password", label: "password", type: "password" },
-        { name: "url", label: "url", type: "url" },
-        { name: "memo", label: "memo", type: "textarea" },
-        { name: "min_role", label: "min_role", type: "select", options: ["member", "manager", "admin"] },
+        { name: "title", label: "계정명", type: "text" },
+        { name: "category", label: "분류", type: "select", options: [option("wifi", "무선 네트워크"), option("server", "서버"), option("cloud", "클라우드"), option("license", "라이선스"), option("other", "기타")] },
+        { name: "username", label: "아이디", type: "text" },
+        { name: "password", label: "비밀번호", type: "password" },
+        { name: "url", label: "접속 주소", type: "url" },
+        { name: "memo", label: "메모", type: "textarea" },
+        { name: "min_role", label: "열람 가능 권한", type: "select", options: [option("member", "일반 구성원"), option("manager", "관리자"), option("admin", "최고 관리자")] },
       ],
       create: (values) => ({ id: uid("cred"), ...values, updated_at: todayISO() }),
     },
@@ -435,6 +437,7 @@ function FormModal({ modal, onClose, onSubmit, submitting = false }) {
     >
       <form id="portal-form" className="form-grid" onSubmit={handleSubmit}>
         {modal.fields.map((field) => {
+          if (field.hidden?.(values)) return null;
           const value = values[field.name] ?? "";
 
           if (field.type === "checkbox") {
@@ -555,7 +558,15 @@ function DetailModal({ detail, onClose }) {
         {content.map((item) => (
           <div key={item.label}>
             <dt>{item.label}</dt>
-            <dd>{typeof item.value === "boolean" ? (item.value ? "true" : "false") : String(item.value || "-")}</dd>
+            <dd>{item.format === "datetime"
+              ? formatDateTime(item.value)
+              : item.format === "date"
+                ? formatDateOnly(item.value)
+                : typeof item.value === "boolean"
+                  ? (item.value ? "예" : "아니오")
+                  : Array.isArray(item.value)
+                    ? (item.value.length ? item.value.join(", ") : "-")
+                    : String(item.value || "-")}</dd>
           </div>
         ))}
       </dl>
@@ -782,6 +793,18 @@ export default function App() {
     setDetailModal({ title, content });
   };
 
+  const confirmAction = ({ title, message, confirmLabel = "변경", onConfirm }) => {
+    setConfirmModal({
+      title,
+      message,
+      confirmLabel,
+      onConfirm: async () => {
+        await onConfirm();
+        setConfirmModal(null);
+      },
+    });
+  };
+
   const downloadFile = async (file) => {
     if (!canAccess(currentUser, file)) {
       showToast("접근 권한이 없습니다.", "warning");
@@ -982,6 +1005,16 @@ export default function App() {
     }
   };
 
+  const confirmUpdate = (key, item, patch, label) => {
+    const nextValue = patch.status || patch.role || patch.account_status || "변경값";
+    confirmAction({
+      title: `${label} 변경 확인`,
+      message: `${label}을(를) '${formatLabel(nextValue)}'(으)로 변경할까요?`,
+      confirmLabel: "변경",
+      onConfirm: () => updateItem(key, item.id, patch),
+    });
+  };
+
   const handleAttendance = async (type) => {
     try {
       const record = await checkAttendance(type);
@@ -1009,7 +1042,17 @@ export default function App() {
     try {
       const detail = await getNotice(notice.id);
       replaceItem("notices", notice.id, { views: detail.views, content: detail.content });
-      openDetail("공지 상세", detail);
+      openDetail("공지 상세", [
+        { label: "제목", value: detail.title },
+        { label: "내용", value: detail.content },
+        { label: "분류", value: formatLabel(detail.category) },
+        { label: "상단 고정 여부", value: detail.is_pinned },
+        { label: "작성자", value: detail.author || detail.authorName },
+        { label: "작성일", value: detail.created_at || detail.createdAt, format: "datetime" },
+        { label: "수정일", value: detail.updated_at || detail.updatedAt, format: "datetime" },
+        { label: "조회수", value: detail.views ?? detail.viewCount },
+        { label: "첨부파일", value: (detail.attachments || []).map((file) => file.filename) },
+      ]);
     } catch (error) {
       showToast(error.message, "error");
     }
@@ -1018,11 +1061,22 @@ export default function App() {
   const openPublicationDetail = async (publication) => {
     try {
       const detail = normalizeResource("publications", await getPublication(publication.id));
-      openDetail("논문 상세", {
-        ...detail,
-        authors: detail.authors?.map((author) => author.name || author.user_id).join(", ") || "-",
-        attachments: detail.attachments?.map((attachment) => attachment.filename).join(", ") || "-",
-      });
+      openDetail("논문 상세", [
+        { label: "논문 제목", value: detail.title },
+        { label: "전체 저자", value: detail.authors_text },
+        { label: "연구실 저자", value: detail.authors?.map((author) => author.name || author.user_id).join(", ") },
+        { label: "시스템 등록자", value: detail.registered_by_name || detail.creator_name },
+        { label: "게재 연도", value: detail.year },
+        { label: "게재일", value: detail.published_date, format: "date" },
+        { label: "논문 유형", value: formatLabel(detail.pub_type) },
+        { label: "진행 상태", value: formatLabel(detail.status) },
+        { label: "게재지", value: detail.venue },
+        { label: "DOI", value: detail.doi },
+        { label: "외부 공개", value: detail.is_public },
+        { label: "첨부파일", value: detail.attachments?.map((attachment) => attachment.filename) },
+        { label: "등록일", value: detail.created_at, format: "datetime" },
+        { label: "수정일", value: detail.updated_at, format: "datetime" },
+      ]);
     } catch (error) {
       showToast(error.message, "error");
     }
@@ -1098,9 +1152,9 @@ export default function App() {
     });
   };
 
-  const getCredentialPassword = async (credential) => {
+  const getCredentialPassword = async (credential, currentPassword) => {
     try {
-      const revealed = await revealCredential(credential.id);
+      const revealed = await revealCredential(credential.id, currentPassword);
       return revealed.password;
     } catch (error) {
       showToast(error.message, "error");
@@ -1108,8 +1162,8 @@ export default function App() {
     }
   };
 
-  const copyCredential = async (credential) => {
-    const password = await getCredentialPassword(credential);
+  const copyCredential = async (credential, currentPassword) => {
+    const password = await getCredentialPassword(credential, currentPassword);
     if (!password) return;
     try {
       await logCredentialCopy(credential.id);
@@ -1127,6 +1181,8 @@ export default function App() {
     openDetail,
     deleteItem,
     updateItem,
+    confirmAction,
+    confirmUpdate,
     updateCollection,
     showToast,
     downloadFile,
@@ -1145,6 +1201,11 @@ export default function App() {
     getCredentialPassword,
     copyCredential,
     canAccess: (item) => canAccess(currentUser, item),
+    canEditOwned: (item) => hasRole(currentUser, "admin") || [item?.created_by, item?.uploaded_by, item?.registered_by, item?.user_id]
+      .filter((value) => value !== null && value !== undefined)
+      .some((value) => String(value) === String(currentUser.id)),
+    isAdmin: hasRole(currentUser, "admin"),
+    isManager: hasRole(currentUser, "manager"),
   };
 
   const openRegister = () => {
@@ -1178,6 +1239,25 @@ export default function App() {
       window.history.replaceState(null, "", `${window.location.pathname}${window.location.search}`);
     }
   };
+
+  useEffect(() => {
+    if (!authSession) return undefined;
+    let timer;
+    const resetTimer = () => {
+      window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        handleLogout();
+        showToast("장시간 활동이 없어 자동으로 로그아웃되었습니다.", "warning");
+      }, IDLE_TIMEOUT_MS);
+    };
+    const events = ["mousedown", "keydown", "touchstart", "scroll"];
+    events.forEach((eventName) => window.addEventListener(eventName, resetTimer, { passive: true }));
+    resetTimer();
+    return () => {
+      window.clearTimeout(timer);
+      events.forEach((eventName) => window.removeEventListener(eventName, resetTimer));
+    };
+  }, [authSession]);
 
   const returnToLogin = () => {
     window.location.assign("/");

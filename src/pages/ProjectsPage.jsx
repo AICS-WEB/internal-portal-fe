@@ -6,16 +6,15 @@ import Pagination from "../components/Pagination.jsx";
 import SearchInput from "../components/SearchInput.jsx";
 import SectionHeader from "../components/SectionHeader.jsx";
 import { usePagedList } from "../hooks/usePagedList.js";
-import { hasRole } from "../utils/permissions.js";
+import { formatDateRange, formatLabel } from "../utils/format.js";
 
 export default function ProjectsPage({ data, currentUser, actions, globalSearch }) {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
-  const canManage = hasRole(currentUser, "manager");
   const statusOptions = useMemo(() => [
     { value: "all", label: "전체" },
     ...[...new Set(data.researchProjects.map((project) => project.status).filter(Boolean))]
-      .map((value) => ({ value, label: value })),
+      .map((value) => ({ value, label: formatLabel(value) })),
   ], [data.researchProjects]);
 
   const projects = useMemo(() => {
@@ -33,11 +32,11 @@ export default function ProjectsPage({ data, currentUser, actions, globalSearch 
   return (
     <div className="page-stack">
       <SectionHeader
-        title="Projects"
+        title="연구과제"
         description="내부 연구과제의 상태와 공개 여부를 관리합니다."
-        actions={canManage ? (
+        actions={(
           <Button variant="primary" onClick={() => actions.openCreate("researchProjects")}>과제 등록</Button>
-        ) : null}
+        )}
       />
 
       <section className="toolbar-panel">
@@ -58,7 +57,7 @@ export default function ProjectsPage({ data, currentUser, actions, globalSearch 
               <div>
                 <dt>기간</dt>
                 <dd>
-                  {project.start_date} - {project.end_date}
+                  {formatDateRange(project.start_date, project.end_date)}
                 </dd>
               </div>
               <div>
@@ -70,7 +69,7 @@ export default function ProjectsPage({ data, currentUser, actions, globalSearch 
                 <dd>{project.program || "-"} / {project.role || "-"}</dd>
               </div>
             </dl>
-            {canManage ? (
+            {actions.canEditOwned(project) ? (
               <div className="table-actions">
                 <Button size="sm" variant="secondary" onClick={() => actions.openEdit("researchProjects", project)}>수정</Button>
                 <Button size="sm" variant="danger" onClick={() => actions.deleteItem("researchProjects", project.id, "연구과제")}>삭제</Button>

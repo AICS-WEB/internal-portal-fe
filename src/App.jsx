@@ -110,7 +110,7 @@ function uid(prefix) {
   return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
 }
 
-function option(value, label = value) {
+function option(value, label = formatLabel(value)) {
   return { value, label };
 }
 

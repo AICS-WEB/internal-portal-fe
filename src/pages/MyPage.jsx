@@ -1,6 +1,7 @@
 import Badge from "../components/Badge.jsx";
 import Button from "../components/Button.jsx";
 import SectionHeader from "../components/SectionHeader.jsx";
+import { formatLabel } from "../utils/format.js";
 
 export default function MyPage({ currentUser, actions }) {
   return (
@@ -43,7 +44,7 @@ export default function MyPage({ currentUser, actions }) {
             </div>
             <div>
               <dt>과정</dt>
-              <dd>{currentUser.program}</dd>
+              <dd>{formatLabel(currentUser.program)}</dd>
             </div>
             <div>
               <dt>입학 연도</dt>
@@ -67,11 +68,11 @@ export default function MyPage({ currentUser, actions }) {
             </div>
             <div>
               <dt>선호 언어</dt>
-              <dd>{currentUser.preferred_language === "en" ? "영어" : "한국어"}</dd>
+              <dd>{formatLabel(currentUser.preferred_language || "ko")}</dd>
             </div>
           </dl>
           <p className="muted-note">연락처는 연구실 내부 연락에만 사용합니다.</p>
-          <p className="profile-bio">{currentUser.bio || "등록된 소개가 없습니다."}</p>
+          <p className="profile-bio">{formatLabel(currentUser.bio, "등록된 소개가 없습니다.")}</p>
         </article>
       </section>
     </div>

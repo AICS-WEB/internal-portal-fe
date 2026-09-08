@@ -27,6 +27,8 @@ const labelMap = {
   public: "공개", private: "비공개", sci: "SCI급 국제학술지", kci: "KCI 등재지",
   intl_conf: "국제학술대회", domestic_conf: "국내학술대회", wifi: "무선 네트워크",
   server: "서버", cloud: "클라우드", license: "라이선스", notice_created: "새 공지",
+  undergrad: "학부", master: "석사", phd: "박사", professor: "교수",
+  ko: "한국어", en: "영어", male: "남성", female: "여성",
   leave_requested: "휴가 신청", leave_approved: "휴가 승인", leave_rejected: "휴가 반려",
   purchase_requested: "구매 신청", purchase_approved: "구매 승인", purchase_rejected: "구매 반려",
   purchase_purchased: "구매 완료", purchase_delivered: "입고 완료",

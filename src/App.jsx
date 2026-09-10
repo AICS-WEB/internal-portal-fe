@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { isValidElement, useEffect, useMemo, useState } from "react";
 import { clearAuthSession, logoutUser, readAuthSession, saveAuthSession } from "./api/auth.js";
 import {
   addPublicationAttachment,
@@ -42,11 +42,14 @@ import {
   uploadFileToStorage,
 } from "./api/portal.js";
 import Button from "./components/Button.jsx";
+import AvatarImage from "./components/AvatarImage.jsx";
 import ConfirmModal from "./components/ConfirmModal.jsx";
+import FileAttachmentList from "./components/FileAttachmentList.jsx";
 import Header from "./components/Header.jsx";
 import Modal from "./components/Modal.jsx";
 import NotificationCenterModal from "./components/NotificationCenterModal.jsx";
 import PublicationFilesModal from "./components/PublicationFilesModal.jsx";
+import RecurrenceField from "./components/RecurrenceField.jsx";
 import Sidebar from "./components/Sidebar.jsx";
 import Toast from "./components/Toast.jsx";
 import AttendancePage from "./pages/AttendancePage.jsx";
@@ -65,7 +68,7 @@ import PublicationsPage from "./pages/PublicationsPage.jsx";
 import PurchasesPage from "./pages/PurchasesPage.jsx";
 import RegisterPage from "./pages/RegisterPage.jsx";
 import ResetPasswordPage from "./pages/ResetPasswordPage.jsx";
-import { formatDateOnly, formatDateTime, formatLabel, toDateTimeInput, todayISO } from "./utils/format.js";
+import { formatCurrency, formatDateOnly, formatDateTime, formatLabel, toDateTimeInput, todayISO } from "./utils/format.js";
 import { canAccess, hasRole } from "./utils/permissions.js";
 
 const pageRegistry = {
@@ -168,7 +171,7 @@ function buildResourceConfigs(currentUser, data) {
         { name: "end_datetime", label: "종료 일시", type: "datetime-local" },
         { name: "location", label: "장소", type: "text" },
         { name: "is_recurring", label: "반복 일정", type: "checkbox" },
-        { name: "recurrence_rule", label: "반복 규칙", type: "text", hidden: (values) => !values.is_recurring },
+        { name: "recurrence_rule", label: "반복 규칙", type: "recurrence", hidden: (values) => !values.is_recurring },
       ],
       create: (values) => ({ id: uid("event"), ...values }),
     },
@@ -444,7 +447,18 @@ function FormModal({ modal, onClose, onSubmit, submitting = false }) {
           if (field.type === "checkbox") {
             return (
               <label key={field.name} className="checkbox-field">
-                <input type="checkbox" checked={Boolean(value)} onChange={(event) => updateValue(field.name, event.target.checked)} />
+                <input
+                  type="checkbox"
+                  checked={Boolean(value)}
+                  onChange={(event) => {
+                    const checked = event.target.checked;
+                    setValues((current) => ({
+                      ...current,
+                      [field.name]: checked,
+                      ...(field.name === "is_recurring" ? { recurrence_rule: checked ? current.recurrence_rule || "FREQ=WEEKLY" : "" } : {}),
+                    }));
+                  }}
+                />
                 <span>{field.label}</span>
               </label>
             );
@@ -476,6 +490,12 @@ function FormModal({ modal, onClose, onSubmit, submitting = false }) {
                     filesize: file.size,
                   })))}
                 />
+                {field.name === "profile_image_file" && files[0]?.file ? (
+                  <div className="profile-upload-preview">
+                    <AvatarImage file={files[0].file} name={values.name || "사용자"} alt="선택한 프로필 이미지 미리보기" />
+                    <span>저장될 프로필 이미지 미리보기</span>
+                  </div>
+                ) : null}
                 {files.length ? (
                   <div className="file-draft-summary">
                     <ul className="file-draft-list">
@@ -515,6 +535,10 @@ function FormModal({ modal, onClose, onSubmit, submitting = false }) {
                 {field.help ? <small className="field-help">{field.help}</small> : null}
               </fieldset>
             );
+          }
+
+          if (field.type === "recurrence") {
+            return <RecurrenceField key={field.name} value={value || "FREQ=WEEKLY"} onChange={(nextValue) => updateValue(field.name, nextValue)} />;
           }
 
           if (field.type === "select") {
@@ -565,9 +589,11 @@ function DetailModal({ detail, onClose }) {
                 ? formatDateOnly(item.value)
                 : typeof item.value === "boolean"
                   ? (item.value ? "예" : "아니오")
-                  : Array.isArray(item.value)
+                : isValidElement(item.value)
+                  ? item.value
+                : Array.isArray(item.value)
                     ? (item.value.length ? item.value.join(", ") : "-")
-                    : String(item.value || "-")}</dd>
+                    : String(item.value ?? "-")}</dd>
           </div>
         ))}
       </dl>
@@ -989,6 +1015,8 @@ export default function App() {
       let updated;
       if (key === "publications") {
         updated = normalizeResource(key, await updateResource(key, id, { ...item, ...patch }));
+      } else if (key === "researchProjects" && typeof patch.is_public === "boolean" && hasRole(currentUser, "admin")) {
+        updated = normalizeResource(key, await updateResource(key, id, { ...item, ...patch }));
       } else if (key === "notices" && typeof patch.is_pinned === "boolean") {
         updated = normalizeResource(key, await setNoticePinned(id, patch.is_pinned));
       } else if (key === "purchaseRequests" && ["approved", "rejected"].includes(patch.status)) {
@@ -1109,13 +1137,45 @@ export default function App() {
         { label: "게재지", value: detail.venue },
         { label: "DOI", value: detail.doi },
         { label: "외부 공개", value: detail.is_public },
-        { label: "첨부파일", value: detail.attachments?.map((attachment) => attachment.filename) },
+        { label: "첨부파일", value: <FileAttachmentList files={detail.attachments} emptyMessage="첨부파일이 없습니다." /> },
         { label: "등록일", value: detail.created_at, format: "datetime" },
         { label: "수정일", value: detail.updated_at, format: "datetime" },
       ]);
     } catch (error) {
       showToast(error.message, "error");
     }
+  };
+
+  const openFileDetail = (file) => {
+    openDetail("자료 상세", [
+      { label: "자료명", value: file.title },
+      { label: "설명", value: file.description },
+      { label: "카테고리", value: formatLabel(file.category) },
+      { label: "파일", value: <FileAttachmentList files={[{ ...file, file_url: "", fileUrl: "" }]} /> },
+      { label: "업로드 날짜", value: file.uploaded_at || file.created_at, format: "datetime" },
+      { label: "등록자", value: file.uploaded_by_name || file.uploader_name || file.uploaded_by },
+      { label: "최소 열람 권한", value: formatLabel(file.min_role) },
+      { label: "다운로드 횟수", value: file.download_count ?? 0 },
+      { label: "다운로드", value: <Button size="sm" variant="primary" onClick={() => downloadFile(file)}>파일 다운로드</Button> },
+    ]);
+  };
+
+  const openExpenseDetail = (expense, budgets = []) => {
+    const budgetName = expense.budget_name || budgets.find((budget) => Number(budget.id) === Number(expense.budget_id))?.name;
+    const receipts = expense.receipts || (expense.receipt ? [expense.receipt] : []);
+    openDetail("지출 상세", [
+      { label: "지출 항목", value: expense.item_name },
+      { label: "금액", value: formatCurrency(expense.amount) },
+      { label: "분류", value: formatLabel(expense.category) },
+      { label: "지출일", value: expense.date, format: "date" },
+      { label: "연결 예산", value: budgetName || expense.budget_id },
+      { label: "상태", value: formatLabel(expense.status) },
+      { label: "등록자", value: expense.user_name || expense.requester_name || expense.user_id },
+      { label: "승인자", value: expense.reviewed_by_name || expense.reviewed_by },
+      { label: "승인 일시", value: expense.reviewed_at, format: "datetime" },
+      { label: "반려 사유", value: expense.reject_reason },
+      { label: "영수증", value: <FileAttachmentList files={receipts} emptyMessage="등록된 영수증이 없습니다." previewImages /> },
+    ]);
   };
 
   const openPublicationFiles = async (publication) => {
@@ -1235,6 +1295,8 @@ export default function App() {
     openNoticeEdit,
     openPublicationDetail,
     openPublicationFiles,
+    openFileDetail,
+    openExpenseDetail,
     getCredentialPassword,
     copyCredential,
     canAccess: (item) => canAccess(currentUser, item),

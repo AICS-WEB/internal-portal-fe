@@ -7,8 +7,7 @@ import { formatDate, toDateTimeInput } from "../utils/format.js";
 
 const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
 
-function getMonthCells(events) {
-  const baseDate = events[0]?.start_datetime ? new Date(events[0].start_datetime) : new Date();
+function getMonthCells(baseDate) {
   const year = baseDate.getFullYear();
   const month = baseDate.getMonth();
   const first = new Date(year, month, 1);
@@ -26,7 +25,11 @@ function getMonthCells(events) {
 
 export default function CalendarPage({ data, actions }) {
   const [recurringDraft, setRecurringDraft] = useState(null);
-  const cells = useMemo(() => getMonthCells(data.calendarEvents), [data.calendarEvents]);
+  const [displayedMonth, setDisplayedMonth] = useState(() => {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  });
+  const cells = useMemo(() => getMonthCells(displayedMonth), [displayedMonth]);
   const eventsByDate = useMemo(() => {
     return data.calendarEvents.reduce((acc, event) => {
       const date = toDateTimeInput(event.start_datetime).slice(0, 10);
@@ -35,6 +38,12 @@ export default function CalendarPage({ data, actions }) {
       return acc;
     }, {});
   }, [data.calendarEvents]);
+
+  const moveMonth = (amount) => setDisplayedMonth((current) => new Date(current.getFullYear(), current.getMonth() + amount, 1));
+  const moveToday = () => {
+    const now = new Date();
+    setDisplayedMonth(new Date(now.getFullYear(), now.getMonth(), 1));
+  };
 
   return (
     <div className="page-stack">
@@ -55,14 +64,20 @@ export default function CalendarPage({ data, actions }) {
 
       <div className="calendar-layout">
       <section className="calendar-panel">
+        <div className="calendar-month-nav" aria-label="달력 월 이동">
+          <Button size="sm" variant="ghost" onClick={() => moveMonth(-1)} aria-label="이전 달">‹</Button>
+          <strong>{displayedMonth.getFullYear()}년 {displayedMonth.getMonth() + 1}월</strong>
+          <Button size="sm" variant="ghost" onClick={() => moveMonth(1)} aria-label="다음 달">›</Button>
+          <Button size="sm" variant="secondary" onClick={moveToday}>오늘</Button>
+        </div>
         <div className="calendar-weekdays">
-          {weekdays.map((day) => (
-            <span key={day}>{day}</span>
+          {weekdays.map((day, index) => (
+            <span key={day} className={index === 0 ? "sunday" : index === 6 ? "saturday" : ""}>{day}</span>
           ))}
         </div>
         <div className="calendar-grid">
           {cells.map((cell, index) => (
-            <article key={`${cell?.date || "blank"}-${index}`} className={`calendar-cell ${cell ? "" : "muted"}`}>
+            <article key={`${cell?.date || "blank"}-${index}`} className={`calendar-cell ${cell ? "" : "muted"} ${index % 7 === 0 ? "sunday" : index % 7 === 6 ? "saturday" : ""}`}>
               {cell ? (
                 <>
                   <strong>{cell.day}</strong>

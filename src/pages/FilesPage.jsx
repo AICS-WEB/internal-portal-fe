@@ -77,7 +77,7 @@ export default function FilesPage({ data, currentUser, actions }) {
         <FilterTabs options={categoryOptions} value={category} onChange={setCategory} />
       </section>
 
-      <DataTable columns={columns} rows={rows} />
+      <DataTable columns={columns} rows={rows} onRowClick={actions.openFileDetail} />
     </div>
   );
 }

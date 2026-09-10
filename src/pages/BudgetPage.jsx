@@ -93,7 +93,7 @@ export default function BudgetPage({ data, currentUser, actions }) {
         <Pagination page={budgetPage.page} totalPages={budgetPage.totalPages} onPrev={budgetPage.onPrev} onNext={budgetPage.onNext} />
       ) : null}
 
-      <DataTable columns={columns} rows={data.expenses} />
+      <DataTable columns={columns} rows={data.expenses} onRowClick={(expense) => actions.openExpenseDetail(expense, data.budgets)} />
     </div>
   );
 }

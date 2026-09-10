@@ -1,5 +1,6 @@
 import { useState } from "react";
 import Button from "./Button.jsx";
+import AvatarImage from "./AvatarImage.jsx";
 import SearchInput from "./SearchInput.jsx";
 import { hasRole } from "../utils/permissions.js";
 
@@ -54,7 +55,7 @@ export default function Header({
           <BellIcon />{unreadCount ? <span>{unreadCount > 9 ? "9+" : unreadCount}</span> : null}
         </button>
         <button type="button" className="workspace-profile-button" onClick={onProfileClick} aria-label="내 정보">
-          {currentUser.profile_image ? <img src={currentUser.profile_image} alt="" /> : <span>{currentUser.name?.slice(0, 1) || "A"}</span>}
+          <AvatarImage src={currentUser.profile_image} name={currentUser.name} />
           <div><strong>{currentUser.name}</strong><small>내 정보</small></div>
         </button>
         <button type="button" className="workspace-logout-button" onClick={onLogoutClick}>로그아웃</button>

@@ -2,14 +2,6 @@ import Badge from "../components/Badge.jsx";
 import Button from "../components/Button.jsx";
 import { formatDateOnly, formatDateTime, formatLabel, formatNumber, todayISO } from "../utils/format.js";
 
-const QUICK_ACTIONS = [
-  { label: "공지 작성", resource: "notices", managerOnly: true },
-  { label: "일정 등록", resource: "calendarEvents" },
-  { label: "휴가 신청", resource: "leaveRequests" },
-  { label: "파일 업로드", resource: "sharedFiles" },
-  { label: "구매 신청", resource: "purchaseRequests" },
-];
-
 function percent(part, total) {
   if (!total) return 0;
   return Math.min(100, Math.round((part / total) * 100));
@@ -31,7 +23,7 @@ function ProgressRow({ label, value, total, tone = "blue" }) {
   );
 }
 
-export default function DashboardPage({ data, currentUser, actions }) {
+export default function DashboardPage({ data, actions }) {
   const today = todayISO();
   const users = data.users || [];
   const notices = data.notices || [];
@@ -63,21 +55,6 @@ export default function DashboardPage({ data, currentUser, actions }) {
 
   return (
     <div className="dashboard-page">
-      <section className="dashboard-intro">
-        <div>
-          <p className="dashboard-eyebrow">연구실 업무 공간</p>
-          <h1>안녕하세요, {currentUser.name}님</h1>
-          <p>오늘 연구실 현황과 진행 중인 업무를 확인하세요.</p>
-        </div>
-        <div className="dashboard-quick-actions">
-          {QUICK_ACTIONS.filter((item) => !item.managerOnly || actions.isManager).map((item) => (
-            <Button key={item.resource} size="sm" variant={item.resource === "calendarEvents" ? "primary" : "secondary"} onClick={() => actions.openCreate(item.resource)}>
-              {item.label}
-            </Button>
-          ))}
-        </div>
-      </section>
-
       <section className="overview-hero">
         <div className="overview-copy">
           <span className="overview-kicker">연구실 한눈에 보기</span>

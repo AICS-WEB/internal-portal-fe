@@ -43,7 +43,7 @@ export default function NoticesPage({ data, currentUser, actions, globalSearch }
       header: "제목",
       render: (notice) => (
         <div className="cell-main">
-          <button type="button" className="table-title-button" onClick={() => actions.openNoticeDetail(notice)}>{notice.title}</button>
+          <strong>{notice.title}</strong>
           <span>{notice.content}</span>
         </div>
       ),
@@ -58,9 +58,6 @@ export default function NoticesPage({ data, currentUser, actions, globalSearch }
       header: "작업",
       render: (notice) => (
         <div className="table-actions">
-          <Button size="sm" variant="secondary" onClick={() => actions.openNoticeDetail(notice)}>
-            상세 보기
-          </Button>
           {canManage ? (
             <>
               <Button size="sm" variant="secondary" onClick={() => actions.updateItem("notices", notice.id, { is_pinned: !notice.is_pinned })}>
@@ -97,7 +94,7 @@ export default function NoticesPage({ data, currentUser, actions, globalSearch }
         </select>
       </section>
 
-      <DataTable columns={columns} rows={filteredNotices} />
+      <DataTable columns={columns} rows={filteredNotices} onRowClick={actions.openNoticeDetail} />
     </div>
   );
 }

@@ -49,7 +49,16 @@ export default function ProjectsPage({ data, actions, globalSearch }) {
           <article key={project.id} className="project-card">
             <div className="card-topline">
               <Badge value={project.status || "unknown"} />
-              <Badge value={project.is_public ? "public" : "private"} />
+              {actions.isAdmin ? (
+                <label className="project-visibility-toggle">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(project.is_public)}
+                    onChange={() => actions.updateItem("researchProjects", project.id, { is_public: !project.is_public })}
+                  />
+                  <span>{project.is_public ? "공개" : "비공개"}</span>
+                </label>
+              ) : <Badge value={project.is_public ? "public" : "private"} />}
             </div>
             <h2>{project.title}</h2>
             <p>{project.funding_agency || "-"}</p>

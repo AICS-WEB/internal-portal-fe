@@ -1,4 +1,5 @@
 import Badge from "../components/Badge.jsx";
+import AvatarImage from "../components/AvatarImage.jsx";
 import Button from "../components/Button.jsx";
 import SectionHeader from "../components/SectionHeader.jsx";
 import { formatLabel } from "../utils/format.js";
@@ -20,7 +21,7 @@ export default function MyPage({ currentUser, actions }) {
       <section className="profile-layout">
         <article className="profile-card">
           <div className="profile-avatar">
-            {currentUser.profile_image ? <img src={currentUser.profile_image} alt={`${currentUser.name} 프로필`} /> : currentUser.name?.slice(0, 1) || "-"}
+            <AvatarImage src={currentUser.profile_image} name={currentUser.name} alt={`${currentUser.name} 프로필`} />
           </div>
           <h2>{currentUser.name}</h2>
           <p>{currentUser.email}</p>

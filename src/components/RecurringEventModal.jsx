@@ -2,6 +2,7 @@ import { useState } from "react";
 import Badge from "./Badge.jsx";
 import Button from "./Button.jsx";
 import Modal from "./Modal.jsx";
+import RecurrenceField from "./RecurrenceField.jsx";
 import { toDateTimeInput } from "../utils/format.js";
 
 function localDatetime(value) {
@@ -124,7 +125,7 @@ export default function RecurringEventModal({ event, onClose, onSaveException, o
             <label className="field"><span>새 시리즈 시작</span><input type="datetime-local" value={split.startDatetime} onChange={(e) => setSplit((v) => ({ ...v, startDatetime: e.target.value }))} /></label>
             <label className="field"><span>첫 회차 종료</span><input type="datetime-local" value={split.endDatetime} onChange={(e) => setSplit((v) => ({ ...v, endDatetime: e.target.value }))} /></label>
             <label className="field"><span>새 시리즈 제목</span><input type="text" value={split.title} onChange={(e) => setSplit((v) => ({ ...v, title: e.target.value }))} /></label>
-            <label className="field"><span>반복 규칙</span><input type="text" value={split.recurrenceRule} onChange={(e) => setSplit((v) => ({ ...v, recurrenceRule: e.target.value }))} /></label>
+            <RecurrenceField value={split.recurrenceRule} onChange={(recurrenceRule) => setSplit((value) => ({ ...value, recurrenceRule }))} />
             <Button type="submit" variant="primary" disabled={Boolean(submitting)}>{submitting === "split" ? "분리 중..." : "시리즈 분리"}</Button>
           </div>
         </form>

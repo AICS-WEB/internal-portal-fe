@@ -8,6 +8,7 @@ export default function DataTable({
   emptyTitle = "표시할 데이터가 없습니다.",
   pageSize = 8,
   paginate = true,
+  onRowClick,
 }) {
   const [page, setPage] = useState(1);
 
@@ -39,7 +40,20 @@ export default function DataTable({
           </thead>
           <tbody>
             {visibleRows.map((row) => (
-              <tr key={row.id}>
+              <tr
+                key={row.id}
+                className={onRowClick ? "clickable-row" : undefined}
+                tabIndex={onRowClick ? 0 : undefined}
+                onClick={(event) => {
+                  if (!onRowClick || event.target.closest("button, a, input, select, textarea")) return;
+                  onRowClick(row);
+                }}
+                onKeyDown={(event) => {
+                  if (!onRowClick || event.target !== event.currentTarget || !["Enter", " "].includes(event.key)) return;
+                  event.preventDefault();
+                  onRowClick(row);
+                }}
+              >
                 {columns.map((column) => (
                   <td key={column.key} data-label={column.header}>
                     {column.render ? column.render(row) : row[column.key]}

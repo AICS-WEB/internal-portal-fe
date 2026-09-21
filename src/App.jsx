@@ -70,6 +70,8 @@ import RegisterPage from "./pages/RegisterPage.jsx";
 import ResetPasswordPage from "./pages/ResetPasswordPage.jsx";
 import { formatCurrency, formatDateOnly, formatDateTime, formatLabel, toDateTimeInput, todayISO } from "./utils/format.js";
 import { canAccess, hasRole } from "./utils/permissions.js";
+import { searchPortal } from "./utils/search.js";
+import { projectStatus, validateProject } from "./utils/projects.js";
 
 const pageRegistry = {
   dashboard: { title: "대시보드", component: DashboardPage },
@@ -202,8 +204,8 @@ function buildResourceConfigs(currentUser, data) {
         status: "active",
         role: "참여",
         owner: currentUser.name,
-        start_date: todayISO(),
-        end_date: todayISO(),
+        start_date: todayISO().slice(0, 7),
+        end_date: todayISO().slice(0, 7),
         is_public: false,
         display_order: 0,
       },
@@ -211,8 +213,8 @@ function buildResourceConfigs(currentUser, data) {
         { name: "title", label: "과제명", type: "text" },
         { name: "funding_agency", label: "지원기관", type: "text" },
         { name: "program", label: "사업명", type: "text" },
-        { name: "start_date", label: "시작일", type: "date" },
-        { name: "end_date", label: "종료일", type: "date" },
+        { name: "start_date", label: "시작일", type: "month" },
+        { name: "end_date", label: "종료일", type: "month" },
         { name: "owner", label: "담당자", type: "text" },
         { name: "role", label: "역할", type: "text" },
         { name: "status", label: "상태", type: "text" },
@@ -383,6 +385,7 @@ function normalizeValues(fields, values) {
 }
 
 async function prepareResourceValues(key, values) {
+  if (key === "researchProjects") return validateProject(values);
   if (key === "publications" && values.attachment_files?.length) {
     const attachments = await Promise.all(values.attachment_files.map((item) => uploadFileToStorage(item.file, "publications")));
     return { ...values, attachments };
@@ -608,6 +611,7 @@ export default function App() {
   const [activePage, setActivePage] = useState("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [globalSearch, setGlobalSearch] = useState("");
+  const [attendancePending, setAttendancePending] = useState(false);
   const [currentUser, setCurrentUser] = useState(() => ({
     name: "사용자",
     email: "",
@@ -770,7 +774,7 @@ export default function App() {
       ? { ...item, author_user_ids: item.authors?.map((author) => author.user_id ?? author.userId) || [] }
       : key === "calendarEvents"
         ? { ...item, start_datetime: toDateTimeInput(item.start_datetime), end_datetime: toDateTimeInput(item.end_datetime) }
-        : item;
+        : key === "researchProjects" ? { ...item, status: projectStatus(item.status) } : item;
     setFormModal({
       title: config.editTitle,
       fields,
@@ -1081,6 +1085,8 @@ export default function App() {
   };
 
   const handleAttendance = async (type) => {
+    if (attendancePending) return;
+    setAttendancePending(true);
     try {
       const record = await checkAttendance(type);
       const normalized = normalizeAttendanceRecord(record, currentUser);
@@ -1091,6 +1097,8 @@ export default function App() {
       showToast(type === "in" ? "출근 처리되었습니다." : "퇴근 처리되었습니다.");
     } catch (error) {
       showToast(error.message, error.status === 403 ? "warning" : "error");
+    } finally {
+      setAttendancePending(false);
     }
   };
 
@@ -1394,6 +1402,15 @@ export default function App() {
           title={activeMeta.title}
           searchValue={globalSearch}
           onSearchChange={setGlobalSearch}
+          searchResults={searchPortal(data, globalSearch, currentUser)}
+          onSearchResult={(result) => {
+            setGlobalSearch("");
+            setActivePage(result.page);
+            if (result.resource === "notices") openNoticeDetail(result.item);
+          }}
+          onAttendance={handleAttendance}
+          attendancePending={attendancePending || loading}
+          attendanceRecord={data.attendanceRecords.find((record) => String(record.user_id) === String(currentUser.id) && record.date === todayISO())}
           currentUser={currentUser}
           notifications={data.notifications}
           onMenuClick={() => setSidebarOpen(true)}

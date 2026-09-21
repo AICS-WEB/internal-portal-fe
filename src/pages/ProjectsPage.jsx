@@ -7,23 +7,24 @@ import SearchInput from "../components/SearchInput.jsx";
 import SectionHeader from "../components/SectionHeader.jsx";
 import { usePagedList } from "../hooks/usePagedList.js";
 import { formatDateRange, formatLabel } from "../utils/format.js";
+import { projectStatus, projectStatusLabel } from "../utils/projects.js";
 
 export default function ProjectsPage({ data, actions, globalSearch }) {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
   const statusOptions = useMemo(() => [
     { value: "all", label: "전체" },
-    ...[...new Set(data.researchProjects.map((project) => project.status).filter(Boolean))]
+    ...[...new Set(data.researchProjects.map((project) => projectStatus(project.status)).filter(Boolean))]
       .map((value) => ({ value, label: formatLabel(value) })),
   ], [data.researchProjects]);
 
   const projects = useMemo(() => {
-    const query = `${search} ${globalSearch}`.trim().toLowerCase();
+    const queries = [search, globalSearch].map((value) => (value || "").trim().toLowerCase()).filter(Boolean);
     return data.researchProjects
-      .filter((project) => status === "all" || project.status === status)
+      .filter((project) => status === "all" || projectStatus(project.status) === status)
       .filter((project) => {
-        if (!query) return true;
-        return `${project.title} ${project.funding_agency} ${project.owner}`.toLowerCase().includes(query);
+        const text = `${project.title} ${project.funding_agency} ${project.owner} ${project.program} ${projectStatusLabel(project)}`.toLowerCase();
+        return queries.every((query) => text.includes(query));
       });
   }, [data.researchProjects, globalSearch, search, status]);
 
@@ -48,7 +49,7 @@ export default function ProjectsPage({ data, actions, globalSearch }) {
         {pageItems.map((project) => (
           <article key={project.id} className="project-card">
             <div className="card-topline">
-              <Badge value={project.status || "unknown"} />
+              <Badge value={projectStatus(project.status) || "unknown"}>{projectStatusLabel(project)}</Badge>
               {actions.isAdmin ? (
                 <label className="project-visibility-toggle">
                   <input

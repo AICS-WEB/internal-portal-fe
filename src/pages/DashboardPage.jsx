@@ -1,5 +1,6 @@
 import Badge from "../components/Badge.jsx";
 import Button from "../components/Button.jsx";
+import { projectStatus, projectStatusLabel } from "../utils/projects.js";
 import { formatDateOnly, formatDateTime, formatLabel, formatNumber, todayISO } from "../utils/format.js";
 
 function percent(part, total) {
@@ -133,7 +134,7 @@ export default function DashboardPage({ data, actions }) {
             <div className="research-grid">
               {projects.slice(0, 4).map((project) => (
                 <article key={project.id} className="research-item">
-                  <div><Badge value={project.status || "unknown"} /><span>{project.funding_agency || "지원기관 미정"}</span></div>
+                  <div><Badge value={projectStatus(project.status) || "unknown"}>{projectStatusLabel(project)}</Badge><span>{project.funding_agency || "지원기관 미정"}</span></div>
                   <strong>{project.title}</strong><p>{formatDateOnly(project.start_date)} ~ {formatDateOnly(project.end_date)}</p>
                 </article>
               ))}

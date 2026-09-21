@@ -1,4 +1,5 @@
 import { apiRequest } from "./client.js";
+import { projectMonth, projectMonthPayload } from "../utils/projects.js";
 
 const payloadMappers = {
   calendarEvents: (value) => ({
@@ -98,8 +99,8 @@ const payloadMappers = {
     title: value.title,
     fundingAgency: value.funding_agency || null,
     program: value.program || null,
-    startDate: value.start_date || null,
-    endDate: value.end_date || null,
+    startDate: projectMonthPayload(value.start_date),
+    endDate: projectMonthPayload(value.end_date),
     owner: value.owner || null,
     role: value.role || null,
     status: value.status || null,
@@ -464,8 +465,8 @@ function normalizeProject(value) {
     owner: value.owner || value.principal_investigator || value.pi_name || "",
     role: value.role || "",
     status: value.status || "",
-    start_date: dateOnly(value.start_date),
-    end_date: dateOnly(value.end_date),
+    start_date: projectMonth(value.start_date),
+    end_date: projectMonth(value.end_date),
     is_public: Boolean(value.is_public),
     display_order: Number(value.display_order || 0),
   };

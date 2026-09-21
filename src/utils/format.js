@@ -54,6 +54,7 @@ function parseDate(value) {
 
 export function formatDateOnly(value) {
   if (!value || ["null", "undefined", "n/a"].includes(String(value).toLowerCase())) return "-";
+  if (/^\d{4}[-.]\d{2}$/.test(String(value))) return String(value).replace("-", ".");
   const date = parseDate(value);
   if (!date) return String(value);
   return new Intl.DateTimeFormat("ko-KR", {

@@ -27,8 +27,14 @@ export default function Header({
   onShowNotifications,
   onProfileClick,
   onLogoutClick,
+  onAttendance,
+  attendanceRecord,
+  attendancePending,
+  searchResults = [],
+  onSearchResult,
 }) {
   const [quickOpen, setQuickOpen] = useState(false);
+  const [searchOpen, setSearchOpen] = useState(false);
   const unreadCount = notifications.filter((item) => !item.read).length;
   const visibleQuickItems = quickItems.filter((item) => !item.minRole || hasRole(currentUser, item.minRole));
 
@@ -40,7 +46,20 @@ export default function Header({
       </div>
 
       <div className="workspace-header-tools">
-        <div className="workspace-search"><SearchInput value={searchValue} onChange={onSearchChange} placeholder="전체 데이터 검색" /></div>
+        <Button size="sm" variant="primary" disabled={attendancePending || Boolean(attendanceRecord?.check_in)} onClick={() => onAttendance("in")}>출근</Button>
+        <Button size="sm" variant="secondary" disabled={attendancePending || !attendanceRecord?.check_in || Boolean(attendanceRecord?.check_out)} onClick={() => onAttendance("out")}>퇴근</Button>
+        <div className="workspace-search" onFocus={() => setSearchOpen(true)} onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) setSearchOpen(false); }} onKeyDown={(event) => { if (event.key === "Escape") setSearchOpen(false); }}>
+          <SearchInput value={searchValue} onChange={(value) => { onSearchChange(value); setSearchOpen(true); }} placeholder="전체 데이터 검색" />
+          {searchOpen && searchValue.trim() ? (
+            <div className="quick-menu global-search-results" aria-label="전체 데이터 검색 결과">
+              {searchResults.length ? searchResults.map((result) => (
+                <button key={`${result.resource}-${result.item.id}`} type="button" onClick={() => { onSearchResult(result); setSearchOpen(false); }}>
+                  <small>{result.category}</small><span>{result.title}</span>
+                </button>
+              )) : <p role="status">검색 결과가 없습니다.</p>}
+            </div>
+          ) : null}
+        </div>
         <div className="quick-create">
           <Button size="sm" variant="primary" onClick={() => setQuickOpen((open) => !open)}>빠른 생성</Button>
           {quickOpen ? (
